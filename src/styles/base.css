@@ -1,0 +1,275 @@
+/* Base CSS Architecture - Reusable Classes Following SOLID Principles */
+
+/* ===== BASE BUTTON STYLES ===== */
+.base-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 1px solid transparent;
+  outline: none;
+  text-decoration: none;
+}
+
+.base-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.base-button:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Button Size Variants */
+.base-button--sm {
+  height: 2rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+}
+
+.base-button--md {
+  height: 2.25rem;
+  padding: 0.5rem 1rem;
+}
+
+.base-button--lg {
+  height: 2.5rem;
+  padding: 0.5rem 2rem;
+}
+
+.base-button--icon {
+  height: 2.25rem;
+  width: 2.25rem;
+  padding: 0;
+}
+
+/* ===== BASE CARD STYLES ===== */
+.base-card {
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.base-card--elevated {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.base-card--bordered {
+  border: 2px solid #e5e7eb;
+}
+
+.base-card__header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.base-card__content {
+  padding: 1.5rem;
+}
+
+.base-card__footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+/* ===== BASE INPUT STYLES ===== */
+.base-input {
+  display: flex;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.base-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.base-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: #f3f4f6;
+}
+
+.base-input--error {
+  border-color: #ef4444;
+}
+
+.base-input--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* ===== BASE LAYOUT STYLES ===== */
+.base-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.base-layout__header {
+  flex-shrink: 0;
+}
+
+.base-layout__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.base-layout__footer {
+  flex-shrink: 0;
+}
+
+.base-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.base-container--sm {
+  max-width: 640px;
+}
+
+.base-container--md {
+  max-width: 768px;
+}
+
+.base-container--lg {
+  max-width: 1024px;
+}
+
+.base-container--xl {
+  max-width: 1280px;
+}
+
+/* ===== BASE FLEX UTILITIES ===== */
+.base-flex {
+  display: flex;
+}
+
+.base-flex--col {
+  flex-direction: column;
+}
+
+.base-flex--center {
+  align-items: center;
+  justify-content: center;
+}
+
+.base-flex--between {
+  justify-content: space-between;
+}
+
+.base-flex--end {
+  justify-content: flex-end;
+}
+
+.base-flex--start {
+  justify-content: flex-start;
+}
+
+/* ===== BASE SPACING UTILITIES ===== */
+.base-gap-1 { gap: 0.25rem; }
+.base-gap-2 { gap: 0.5rem; }
+.base-gap-3 { gap: 0.75rem; }
+.base-gap-4 { gap: 1rem; }
+.base-gap-6 { gap: 1.5rem; }
+.base-gap-8 { gap: 2rem; }
+
+/* ===== BASE TEXT UTILITIES ===== */
+.base-text--xs { font-size: 0.75rem; }
+.base-text--sm { font-size: 0.875rem; }
+.base-text--base { font-size: 1rem; }
+.base-text--lg { font-size: 1.125rem; }
+.base-text--xl { font-size: 1.25rem; }
+
+.base-text--center { text-align: center; }
+.base-text--left { text-align: left; }
+.base-text--right { text-align: right; }
+
+/* ===== BASE STATE STYLES ===== */
+.base-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.base-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.base-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  .base-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .base-card__header,
+  .base-card__footer {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .base-input {
+    background: #1f2937;
+    border-color: #374151;
+    color: white;
+  }
+  
+  .base-input:disabled {
+    background: #111827;
+  }
+}
+
+/* ===== RESPONSIVE UTILITIES ===== */
+@media (min-width: 640px) {
+  .base-container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .base-container {
+    padding: 0 2rem;
+  }
+}

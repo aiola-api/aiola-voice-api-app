@@ -1,0 +1,404 @@
+/* Chat Message Components Styles */
+
+/* ChatMessage component styles */
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 12px;
+  margin: 0 4px;
+}
+
+.chat-message--user {
+  justify-content: flex-end;
+}
+
+.chat-message--assistant {
+  justify-content: flex-start;
+}
+
+.chat-message__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-message__content--user {
+  align-items: flex-end;
+}
+
+.chat-message__content--assistant {
+  align-items: flex-start;
+}
+
+.chat-message__unsupported {
+  padding: 1rem;
+  border: 1px solid #fcd34d;
+  background-color: #fefce8;
+  border-radius: 0.5rem;
+}
+
+.chat-message__unsupported-title {
+  font-weight: 500;
+  color: #92400e;
+}
+
+.chat-message__unsupported-content {
+  margin-top: 0.5rem;
+  color: #a16207;
+}
+
+/* Base message styles */
+.chat-message-base {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+}
+
+/* Request Messages (User - Right aligned) */
+.request-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: white;
+  color: black;
+  border-color: black;
+  border-bottom-right-radius: 0.125rem;
+}
+
+/* Response Messages (Assistant - Left aligned) */
+.response-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: black;
+  color: white;
+  border-color: white;
+  border-bottom-left-radius: 0.125rem;
+}
+
+/* Specific message type classes (extending base classes) */
+.stt-stream-request-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: white;
+  color: black;
+  border-color: black;
+  border-bottom-right-radius: 0.125rem;
+}
+
+.stt-file-request-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: white;
+  color: black;
+  border-color: black;
+  border-bottom-right-radius: 0.125rem;
+}
+
+.tts-request-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: white;
+  color: black;
+  border-color: black;
+  border-bottom-right-radius: 0.125rem;
+}
+
+.transcript-response-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: black;
+  color: white;
+  border-color: white;
+  border-bottom-left-radius: 0.125rem;
+}
+
+.transcript-message-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.transcript-message-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transcript-message-icon-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transcript-message-icon {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.transcript-message-label {
+  font-size: 13px;
+  opacity: 1;
+  font-weight: normal;
+  color: white;
+}
+
+.voice-response-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-width: 2px;
+  padding: 12px 16px;
+  font-family: monospace;
+  background-color: black;
+  color: white;
+  border-color: white;
+  border-bottom-left-radius: 0.125rem;
+}
+
+/* Message content styles */
+.message-content {
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+
+.message-content-request {
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-size: 13px;
+  color: black;
+}
+
+.message-content-response {
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-size: 13px;
+  width: 40rem;
+  color: white;
+}
+
+/* Base layout styles */
+.flex-container {
+  display: flex;
+  align-items: center;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Base icon styles */
+.message-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+/* Voice message specific styles */
+.voice-message-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: monospace;
+}
+
+.voice-message-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  gap: 8px;
+}
+
+.voice-message-icon-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-tts-icon {
+  height: 1rem;
+  width: 1rem;
+  opacity: 0.8;
+}
+
+.voice-message-icon {
+  height: 0.7rem;
+  width: 0.7rem;
+  opacity: 0.8;
+}
+
+.voice-message-label {
+  font-size: 13px;
+  opacity: 1;
+  font-weight: normal;
+  font-family: monospace;
+}
+
+.voice-message-time {
+  font-size: 11px;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+/* Waveform container to prevent overflow */
+.waveform-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+/* Voice message error styles */
+.voice-message-error {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}
+
+.voice-message-error-text {
+  font-size: 12px;
+  font-family: monospace;
+}
+
+/* STT Stream content styles */
+.stt-stream-content {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.stt-stream-text {
+  font-size: 13px;
+  font-family: monospace;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* File message styles */
+.file-message-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.file-message-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.file-message-text {
+  font-size: 0.75rem;
+}
+
+/* TTS and playback styles */
+.tts-controls {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  gap: 4px;
+}
+
+/* Base TTS button styles */
+.tts-button {
+  font-size: 14px;
+}
+
+.tts-button-request {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.tts-button-request:hover {
+  color: #212529;
+}
+
+.tts-button-response {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.tts-button-response:hover {
+  color: white;
+}
+
+/* Base TTS label styles */
+.tts-label {
+  font-size: 14px;
+}
+
+.tts-label-request {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.tts-label-response {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Time stamp styles */
+.timestamp {
+  color: #6c757d;
+  font-family: monospace;
+  font-size: 10px;
+  margin-top: 3px;
+  padding: 0 1px;
+}
+
+/* Fallback message styles */
+.unsupported-message {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 1rem;
+  font-family: monospace;
+}
+
+/* TtsRequestMessage styles */
+.tts-request-message {
+  min-width: 300px;
+  max-width: 100%;
+}
+
+/* Responsive styles for TtsRequestMessage */
+@media (max-width: 768px) {
+  .tts-request-message {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tts-request-message {
+    min-width: 100%;
+    padding: 0.75rem;
+  }
+}

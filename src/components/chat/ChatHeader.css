@@ -1,0 +1,194 @@
+/* ChatHeader Component Styles */
+
+.chat-header {
+  border-bottom: 1px solid #1f2937;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  background-color: #000000;
+  color: #ffffff;
+  padding: 15px 32px;
+}
+
+.chat-header__container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.chat-header__left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+  align-items: flex-start;
+}
+
+.chat-header__content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.chat-header__content-below {
+  display: flex;
+  width: 100%;
+}
+
+.chat-header__text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-header__title-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.chat-header__title {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 25px;
+  font-family: monospace;
+}
+
+.chat-header__status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Microphone status styles */
+.chat-header__microphone-status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.chat-header__microphone-indicator {
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.chat-header__microphone-indicator--connected {
+  color: #ef4444; /* Red for recording */
+}
+
+.chat-header__microphone-indicator--ready {
+  color: #10b981; /* Green for ready */
+}
+
+.chat-header__microphone-indicator--connecting {
+  color: #f59e0b; /* Amber for connecting */
+}
+
+.chat-header__microphone-indicator--idle {
+  color: #6b7280; /* Gray for idle */
+}
+
+.chat-header__microphone-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.chat-header__microphone-text--connected {
+  color: #dc2626; /* Red for recording */
+}
+
+.chat-header__microphone-text--ready {
+  color: #059669; /* Green for ready */
+}
+
+.chat-header__microphone-text--connecting {
+  color: #d97706; /* Amber for connecting */
+}
+
+.chat-header__microphone-text--idle {
+  color: #6b7280; /* Gray for idle */
+}
+
+.chat-header__subtitle {
+  color: #ffffff;
+  opacity: 0.9;
+  font-size: 16px;
+}
+
+.chat-header__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chat-header__settings-button {
+  height: 2rem;
+  width: 2rem;
+  padding: 0;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.chat-header__settings-button svg {
+  height: 2rem !important;
+  width: 2rem !important;
+}
+
+.chat-header__settings-button:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.chat-header__connection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+}
+
+.chat-header__connection-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.chat-header__connection-label {
+  color: #ffffff;
+  opacity: 0.8;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.chat-header__connection-value {
+  color: #ffffff;
+  opacity: 0.9;
+  font-family: monospace;
+  font-weight: 400;
+}
+
+.chat-header__copy-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: #ffffff;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  padding: 0.125rem;
+}
+
+.chat-header__copy-icon:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+/* Version display styles */
+.chat-header__version {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #ffffff;
+  opacity: 0.8;
+  font-weight: 400;
+  position: absolute;
+  top: 0.75rem;
+  z-index: 10;
+}
