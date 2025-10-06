@@ -51,6 +51,8 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                         ? "chat-header__microphone-indicator--ready"
                         : audio.microphoneState === "connecting"
                         ? "chat-header__microphone-indicator--connecting"
+                        : audio.microphoneState === "preparingMic"
+                        ? "chat-header__microphone-indicator--preparingMic"
                         : "chat-header__microphone-indicator--idle"
                     }`}
                   />
@@ -62,6 +64,8 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                         ? "chat-header__microphone-text--ready"
                         : audio.microphoneState === "connecting"
                         ? "chat-header__microphone-text--connecting"
+                        : audio.microphoneState === "preparingMic"
+                        ? "chat-header__microphone-text--preparingMic"
                         : "chat-header__microphone-text--idle"
                     }`}
                   >
@@ -71,6 +75,8 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                       ? "Ready"
                       : audio.microphoneState === "connecting"
                       ? "Connecting"
+                      : audio.microphoneState === "preparingMic"
+                      ? "Preparing Mic"
                       : "Idle"}
                   </span>
                 </div>

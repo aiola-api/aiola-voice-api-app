@@ -1,6 +1,11 @@
 import { atom } from "recoil";
 
-export type MicrophoneState = "idle" | "ready" | "connected" | "connecting";
+export type MicrophoneState =
+  | "idle"
+  | "ready"
+  | "connected"
+  | "connecting"
+  | "preparingMic";
 
 export interface AudioState {
   micAllowed: boolean;

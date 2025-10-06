@@ -82,6 +82,12 @@
   color: #f59e0b; /* Amber for connecting */
 }
 
+.chat-header__microphone-indicator--preparingMic {
+  color: #ef4444; /* Red for preparing mic (same as connected but different state) */
+  background-color: #f59e0b; /* Amber background like connecting state */
+  border-radius: 50%;
+}
+
 .chat-header__microphone-indicator--idle {
   color: #6b7280; /* Gray for idle */
 }
@@ -101,6 +107,10 @@
 
 .chat-header__microphone-text--connecting {
   color: #d97706; /* Amber for connecting */
+}
+
+.chat-header__microphone-text--preparingMic {
+  color: #dc2626; /* Red for preparing mic (same as connected but different state) */
 }
 
 .chat-header__microphone-text--idle {

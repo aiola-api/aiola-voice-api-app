@@ -97,9 +97,13 @@ export function VoiceControls() {
   // Temporary state to test animation
   const [testConnecting, setTestConnecting] = useState(false);
 
+  // State to track microphone preparation phase
+  const [preparingMic, setPreparingMic] = useState(false);
+
   // Compute microphone state based on connection and recording state
   const computedMicrophoneState = (() => {
     if (audio.isRecording) return "connected";
+    if (preparingMic) return "preparingMic";
     if (isConnecting || testConnecting) return "connecting";
     if (isOnline && sessionId) return "ready";
     return "idle";
@@ -373,6 +377,9 @@ export function VoiceControls() {
         };
       });
 
+      // Clear preparingMic state as recording has started
+      setPreparingMic(false);
+
       console.log("✅ Recording started successfully", {
         isRecording: true,
         currentSessionId: audio.currentSessionId,
@@ -393,6 +400,7 @@ export function VoiceControls() {
   };
 
   const startRecording = async () => {
+    console.log("🎤 Starting recording...");
     if (!settings.connection.apiKey) {
       toast.error("Please configure your API key first");
       return;
@@ -495,6 +503,10 @@ export function VoiceControls() {
           `${import.meta.env.BASE_URL}audio-processor.js`
         );
         console.log("✅ Audio worklet loaded");
+
+        // Set preparingMic state after AudioContext setup but before recording starts
+        setPreparingMic(true);
+        console.log("🔧 Microphone preparation phase started");
       } catch (audioError) {
         console.error("❌ AudioContext setup failed:", audioError);
         toast.error(
@@ -1011,7 +1023,7 @@ export function VoiceControls() {
     } catch (error) {
       console.error("❌ Failed to create session:", error);
       toast.error(
-        "Failed to create session. Please check your API key and try again."
+        "Failed to create session. Please check your API key in the settings and try again →"
       );
       // Reset connecting animation on error
       setTestConnecting(false);
@@ -1053,6 +1065,18 @@ export function VoiceControls() {
             </div>
           </div>
         );
+      case "preparingMic":
+        return (
+          <div className="voice-controls__mic-container">
+            <div className="voice-controls__connecting-indicator">
+              <div className="voice-controls__connecting-dot--white" />
+            </div>
+            <IconMicrophone className="voice-controls__mic-icon--preparing" />
+            <div className="voice-controls__language-indicator">
+              {languageShortLabel}
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="voice-controls__mic-container">
@@ -1067,6 +1091,10 @@ export function VoiceControls() {
 
   // Helper function to get button className based on state
   const getButtonClassName = () => {
+    console.log(
+      "🔍 getButtonClassName-> Getting button class name for state:",
+      displayMicrophoneState
+    );
     const baseClass = "voice-controls__mic-button";
     const stateClass = (() => {
       switch (displayMicrophoneState) {
@@ -1076,6 +1104,8 @@ export function VoiceControls() {
           return "voice-controls__mic-button--ready";
         case "connecting":
           return "voice-controls__mic-button--connecting";
+        case "preparingMic":
+          return "voice-controls__mic-button--preparingMic";
         default:
           return "voice-controls__mic-button--idle";
       }

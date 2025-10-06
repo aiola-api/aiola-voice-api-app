@@ -9,7 +9,7 @@ function App() {
       <SettingsInitializer />
       <div className="min-h-screen" style={{ backgroundColor: "#d1d5db" }}>
         <Chat />
-        <Toaster position="top-center" />
+        <Toaster position="top-right" style={{ marginTop: "40px", marginRight: "50px" }} />
       </div>
     </RecoilRoot>
   );

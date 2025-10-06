@@ -82,6 +82,13 @@
   position: relative;
 }
 
+.voice-controls__mic-button--preparingMic {
+  border-color: white;
+  background-color: #dc2626;
+  border-width: 2px;
+  position: relative;
+}
+
 .voice-controls__connecting-indicator {
   position: relative;
   width: 100%;
@@ -97,6 +104,19 @@
   height: 10px;
   border-radius: 50%;
   background-color: black;
+  position: absolute;
+  top: 40%;
+  left: 40%;
+  translate: 0px 40px;
+  z-index: 1000;
+}
+
+/* Variant: override background-color to white */
+.voice-controls__connecting-dot--white {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: white;
   position: absolute;
   top: 40%;
   left: 40%;
@@ -146,6 +166,17 @@
   height: 2.5rem;
   width: 2.5rem;
   color: #000000;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.voice-controls__mic-icon--preparing {
+  height: 2.5rem;
+  width: 2.5rem;
+  color: white;
+  background-color: #dc2626;
   position: absolute;
   top: 50%;
   left: 50%;
