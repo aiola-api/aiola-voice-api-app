@@ -20,4 +20,6 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
+  base: "/aiola-voice-api-app/",
+  build: { outDir: "docs" },
 });
