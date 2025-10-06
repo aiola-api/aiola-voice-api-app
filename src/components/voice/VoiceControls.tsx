@@ -492,7 +492,7 @@ export function VoiceControls() {
         }
 
         await audioContextRef.current.audioWorklet.addModule(
-          "/audio-processor.js"
+          `${import.meta.env.BASE_URL}audio-processor.js`
         );
         console.log("✅ Audio worklet loaded");
       } catch (audioError) {
