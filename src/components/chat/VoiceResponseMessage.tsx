@@ -39,8 +39,8 @@ function VoiceResponseMessageBase({
       {/* TTS playback widget as content */}
       <TTSPlaybackWidget
         messageId={message.id}
-        text={message.content}
         className="tts-playback-widget-content"
+        text={""}
       />
     </div>
   );

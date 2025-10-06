@@ -19,7 +19,7 @@ export function ChatMessage({ message, showTime = true }: ChatMessageProps) {
   const renderMessageComponent = () => {
     // User messages (requests) - right aligned
     if (message.role === "user") {
-      if (message.kind === "STT Stream" || message.kind === "TTS") {
+      if (message.kind === "STT Stream") {
         return (
           <SttStreamRequestMessage message={message} showTime={showTime} />
         );

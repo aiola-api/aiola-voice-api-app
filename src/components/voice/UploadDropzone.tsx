@@ -65,6 +65,11 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
     setIsUploading(true);
     setUploadProgress(0);
 
+    // Generate unique conversation session ID for file upload
+    const uploadSessionId = `upload_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 6)}`;
+
     // Create user message for file upload
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -75,6 +80,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
       status: "processing",
       fileName: file.name,
       fileType: file.type,
+      conversation_session_id: uploadSessionId,
     };
 
     setConversation((prev) => ({
@@ -118,6 +124,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
         createdAt: Date.now(),
         kind: "Transcription",
         status: "done",
+        conversation_session_id: uploadSessionId,
       };
 
       setConversation((prev) => ({
