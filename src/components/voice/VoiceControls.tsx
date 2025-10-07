@@ -473,6 +473,9 @@ export function VoiceControls() {
         sttRequestStartTimeRef.current
       );
 
+      // Set preparingMic state after AudioContext setup but before recording starts
+      setPreparingMic(true);
+      
       // STEP 1: Get microphone stream (permission already granted)
       console.log("🎤 Step 1: Accessing microphone stream...");
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -504,8 +507,6 @@ export function VoiceControls() {
         );
         console.log("✅ Audio worklet loaded");
 
-        // Set preparingMic state after AudioContext setup but before recording starts
-        setPreparingMic(true);
         console.log("🔧 Microphone preparation phase started");
       } catch (audioError) {
         console.error("❌ AudioContext setup failed:", audioError);
