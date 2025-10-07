@@ -1,9 +1,7 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_AIOLA_API_URL: string;
-  readonly VITE_ENABLE_CLIENT_SDK: string;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ImportMetaEnv {}
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;

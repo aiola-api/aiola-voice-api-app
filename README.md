@@ -1,60 +1,89 @@
-# AIOLA Chat Web App
+# 🎤 Aiola Voice API App
 
-A modern web application for voice and text interactions using the Aiola SDK, built with React, Vite, Recoil, and shadcn/ui.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/) [![Vite](https://img.shields.io/badge/Vite-B73BFE?logo=vite&logoColor=FFD62E)](https://vitejs.dev/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## Features
+A powerful **aiOla SDK-powered** voice interaction web application that showcases the full capabilities of aiOla's advanced speech processing technology. Built with React and designed specifically to demonstrate aiOla's enterprise-grade voice AI features including real-time speech-to-text, intelligent transcription, text-to-speech synthesis, and conversational AI in a polished, production-ready interface.
 
-- **Voice Input (STT)**: Real-time speech-to-text with live waveform visualization
-- **File Upload**: Upload audio files (WAV, MP3, MP4) for transcription
-- **Text-to-Speech (TTS)**: Convert text to speech with multiple voice options
-- **Chat Interface**: Stream responses from AI assistant
-- **Configuration**: Manage API keys, STT/TTS settings
-- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+## ✨ Features
 
-## Tech Stack
+### 🎯 **Core aiOla SDK Capabilities**
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **State Management**: Recoil
+- **🎙️ STT Streaming**: Real-time speech-to-text with live waveform visualization, audio level monitoring, and continuous streaming transcription powered by aiOla's enterprise-grade speech recognition engine
+- **📁 File Upload**: Upload audio files (WAV, MP3, MP4) for high-accuracy transcription and processing using aiOla's advanced audio analysis algorithms
+- **🔊 TTS Synthesis**: Convert text to speech with multiple aiOla voice options, natural intonation, and seamless playback controls showcasing aiOla's neural voice technology
+
+## 📋 Table of Contents
+
+- [Tech Stack](#-tech-stack)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Scripts](#-scripts)
+- [Configuration](#-configuration)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+
+## 🛠️ Tech Stack
+
+### Core Technologies
+
+- **Web**: React 18 + TypeScript
+- **Build Tool**: Vite 5.4+
+- **Language**: TypeScript 5.9+
+
+### State Management & Data
+
+- **State Management**: Recoil 0.7.7 😘
+- **SDK**: @aiola/sdk 2.1.4 🤯
+
+### UI & Styling
+
 - **UI Components**: shadcn/ui (New York theme)
-- **Icons**: Tabler Icons
-- **Styling**: Tailwind CSS
-- **SDK**: @aiola/sdk
+- **Styling**: Tailwind CSS 4.1+
+- **Icons**: Lucide React & Tabler Icons
+- **CSS Variables**: Dynamic theme support
 
-## Getting Started
+### Audio Processing
 
-### Prerequisites
+- **Waveform Visualization**: WaveSurfer.js 7.11+
+- **Audio Utilities**: Custom audio processing hooks
 
-- Node.js 20.19.0 or higher
-- npm or yarn package manager
+### Development Tools
 
-### Installation
+- **Linting**: ESLint 9.36+ with React hooks plugin
+- **Type Checking**: TypeScript with strict configuration
+- **Build Optimization**: Vite with React plugin
 
-1. Navigate to the web app directory:
+## 📋 Prerequisites
+
+Before running this project, ensure you have:
+
+- **Node.js**: Version 20.19.0 or higher
+- **Package Manager**: npm or yarn
+- **Browser**: Modern browser with Web Audio API support
+- **Microphone**: Required for voice input features
+- **Aiola API Key**: Required for SDK functionality
+
+## 🚀 Installation
+
+1. **Clone the repository**
 
    ```bash
-   cd apps/web
+   git clone <repository-url>
+   cd aiola-voice-api-app
    ```
 
-2. Install dependencies:
+2. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-3. Create environment file:
+## 🎯 Usage
 
-   ```bash
-   cp env.example .env.local
-   ```
-
-4. Configure environment variables in `.env.local`:
-   ```env
-   VITE_AIOLA_API_URL=https://api.aiola.com
-   VITE_ENABLE_CLIENT_SDK=true
-   ```
-
-### Development
+### Development Server
 
 Start the development server:
 
@@ -62,135 +91,160 @@ Start the development server:
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+The application will be available at `http://localhost:3000`
 
-### Build
+### Production Build
 
-Build for production:
+Create a production build:
 
 ```bash
 npm run build
 ```
 
-Preview production build:
+Preview the production build locally:
 
 ```bash
 npm run preview
 ```
 
-## Usage
+### Basic Workflow
 
-### Configuration
+1. **Configure API Key**: Click the Config button and enter your Aiola API key
+2. **Voice Recording**: Click the microphone button to start recording
+3. **File Upload**: Drag and drop or select audio files for transcription
+4. **Text-to-Speech**: Click the speaker icon on messages or use the TTS dialog
+5. **Chat Interaction**: Type messages or use voice input for AI conversations
 
-1. Click the **Config** button in the header
-2. Set up your Aiola API key in the Connection tab
-3. Configure STT language and keywords in the STT tab
-4. Select TTS voice in the TTS tab
-5. Save settings
+## 📜 Scripts
 
-### Voice Input
+| Script            | Description                              |
+| ----------------- | ---------------------------------------- |
+| `npm run dev`     | Start development server with hot reload |
+| `npm run build`   | Build for production                     |
+| `npm run preview` | Preview production build locally         |
+| `npm run lint`    | Run ESLint code analysis                 |
 
-1. Click the microphone button to start recording
-2. Speak into your microphone
-3. Watch the live waveform and timer
-4. Release the button to stop recording
-5. The AI will respond with a streamed message
+## ⚙️ Configuration
 
-### File Upload
+### Application Settings
 
-1. Click the upload button
-2. Select an audio file (WAV, MP3, MP4)
-3. Watch the upload progress
-4. The file will be transcribed and processed by the AI
+Access the configuration dialog through the app header:
 
-### Text-to-Speech
+- **Connection Section**: API key, endpoint, and connection settings
+- **STT Section**: Speech-to-text language and keyword configuration
+- **TTS Section**: Text-to-speech voice selection and preferences
 
-1. Click the **TTS** button in the header for custom text
-2. Or click the speaker icon on any assistant message
-3. Select a voice and generate audio
-4. Play/pause the generated speech
+#### Getting an API Key
 
-### Text Chat
+To use this application, you'll need an aiOla API key:
 
-1. Type in the composer at the bottom
-2. Press Enter to send (Shift+Enter for newline)
-3. Receive streamed responses from the AI
+1. Visit the [aiOla Platform](https://platform.aiola.ai/) to create your account
+2. Navigate to your API keys section in the platform dashboard
+3. Generate a new API key for your application
+4. Copy the API key and paste it into the **Connection Section** of the configuration dialog
 
-## Configuration Options
-
-### Connection
-
-- **API Key**: Required for all Aiola SDK operations
-- **Endpoint Override**: Optional custom endpoint URL
-- **Remember Key**: Save API key locally (not recommended for production)
-
-### STT (Speech-to-Text)
-
-- **Language**: Supported languages (en_US, es_ES, fr_FR, etc.)
-- **Keywords**: Biasing hints for better recognition
-- **VAD**: Voice Activity Detection (uses SDK defaults)
-
-### TTS (Text-to-Speech)
-
-- **Voice**: Available voices (tara, zoe, zac, dan, jess, leo, mia, julia, leah)
-- **Language**: Fixed to English (en)
-
-## Project Structure
+## 📁 Project Structure
 
 ```
-src/
-├── components/
-│   ├── chat/
-│   │   └── TTSPlaybackButton.tsx
-│   ├── settings/
-│   │   └── ConfigDialog.tsx
-│   ├── tts/
-│   │   └── TTSDialog.tsx
-│   ├── ui/              # shadcn/ui components
-│   └── voice/
-│       ├── AudioLevelMeter.tsx
-│       ├── UploadDropzone.tsx
-│       └── VoiceControls.tsx
-├── lib/
-│   └── aiolaClient.ts   # Aiola SDK wrapper
-├── pages/
-│   └── Chat.tsx         # Main chat page
-├── state/
-│   ├── audio.ts         # Audio state management
-│   ├── conversation.ts  # Chat state management
-│   └── settings.ts      # Configuration state
-└── styles/
-    └── globals.css      # Global styles and CSS variables
+aiola-voice-api-app/
+├── public/                 # Static assets
+│   └── audio-processor.js  # WebAssembly audio processing
+├── src/
+│   ├── components/         # React components
+│   │   ├── chat/          # Chat-related components
+│   │   ├── settings/      # Configuration dialogs
+│   │   ├── tts/           # Text-to-speech components
+│   │   ├── ui/            # Reusable UI components (shadcn/ui)
+│   │   └── voice/         # Voice interaction components
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useConnection.ts
+│   │   ├── useSTT.ts
+│   │   └── useTTS.ts
+│   ├── lib/               # Utilities and SDK wrapper
+│   │   ├── constants.ts
+│   │   └── utils.ts
+│   ├── pages/             # Page components
+│   │   └── Chat.tsx       # Main chat interface
+│   ├── state/             # Recoil state management
+│   │   ├── audio.ts       # Audio state atoms
+│   │   ├── connection.ts  # Connection state atoms
+│   │   ├── conversation.ts # Chat conversation atoms
+│   │   └── settings.ts    # Configuration atoms
+│   └── styles/            # Global styles and CSS variables
+├── docs/                  # Production build output
+├── index.html             # Entry point
+└── vite.config.ts         # Vite configuration
 ```
 
-## Development Notes
+## 🤝 Contributing
 
-- The app uses placeholder implementations for the Aiola SDK
-- Replace the mock functions in `src/lib/aiolaClient.ts` with actual SDK calls
-- All state is managed through Recoil atoms
-- Components are built with shadcn/ui for consistency
-- The app supports both light and dark themes
+We welcome contributions! Please follow these guidelines:
 
-## Troubleshooting
+### Getting Started
 
-### Microphone Access
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Install dependencies: `npm install`
+4. Make your changes
+5. Run tests and linting: `npm run lint`
+6. Commit changes: `git commit -m 'Add amazing feature'`
+7. Push to branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
 
-- Ensure microphone permissions are granted
-- Check browser settings for microphone access
-- Try refreshing the page if permission is denied
+### Development Guidelines
 
-### API Key Issues
+- Follow TypeScript strict mode requirements
+- Use ESLint configuration for code style
+- Write clear, concise commit messages
+- Update documentation for new features
+- Test changes across different browsers
 
-- Verify your Aiola API key is correct
-- Check if the key has the required permissions
-- Ensure the endpoint URL is accessible
+### Code Style
 
-### File Upload
+- Use functional components with hooks
+- Follow React best practices
+- Maintain consistent file naming (PascalCase for components)
+- Use meaningful variable and function names
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Microphone Access Issues**
+
+- Ensure browser permissions are granted for microphone access
+- Check browser settings and security preferences
+- Try refreshing the page if permissions were previously denied
+
+**API Key Problems**
+
+- Verify your Aiola API key is valid and active
+- Check that the key has appropriate permissions
+- Ensure network connectivity to the API endpoint
+
+**File Upload Errors**
 
 - Supported formats: WAV, MP3, MP4
 - Maximum file size: 50MB
-- Check browser console for upload errors
+- Check browser console for detailed error messages
 
-## License
+**Audio Playback Issues**
 
-This project is part of the Aiola ecosystem.
+- Ensure browser supports Web Audio API
+- Check system audio settings and volume levels
+- Verify no other applications are using the audio device
+
+### Getting Help
+
+1. Check the browser developer console for error messages
+2. Verify all environment variables are correctly set
+3. Ensure all dependencies are properly installed
+4. Test with a minimal configuration first
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ for the Aiola ecosystem**
