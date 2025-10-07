@@ -147,12 +147,12 @@
 }
 
 .chat-header__connection-info {
-  display: flex;
-  flex-direction: row;
-  gap: 1.5rem;
-  align-items: center;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .chat-header__connection-item {
