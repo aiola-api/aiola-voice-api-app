@@ -2,6 +2,7 @@ import { SttStreamRequestMessage } from "./SttStreamRequestMessage";
 import { SttFileRequestMessage } from "./SttFileRequestMessage";
 import { TtsRequestMessage } from "./TtsRequestMessage";
 import { TranscriptResponseMessage } from "./TranscriptResponseMessage";
+import { StructuredResponseMessage } from "./StructuredResponseMessage";
 import { VoiceResponseMessage } from "./VoiceResponseMessage";
 import type { ChatMessage as ChatMessageType } from "@/state/conversation";
 import { componentClassName } from "@/lib/utils";
@@ -37,6 +38,11 @@ export function ChatMessage({ message, showTime = true }: ChatMessageProps) {
       if (message.kind === "Transcription") {
         return (
           <TranscriptResponseMessage message={message} showTime={showTime} />
+        );
+      }
+      if (message.kind === "Structured") {
+        return (
+          <StructuredResponseMessage message={message} showTime={showTime} />
         );
       }
       if (message.kind === "Playback") {

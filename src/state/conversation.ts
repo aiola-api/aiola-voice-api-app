@@ -8,7 +8,13 @@ export interface ChatMessage {
   error?: string;
   sessionId?: string;
   conversation_session_id: string; // Links user messages to their corresponding agent responses
-  kind?: "Transcription" | "Playback" | "STT Stream" | "STT File" | "TTS";
+  kind?:
+    | "Transcription"
+    | "Playback"
+    | "STT Stream"
+    | "STT File"
+    | "TTS"
+    | "Structured";
   status?: "recording" | "streaming" | "done" | "error" | "processing";
   durationMs?: number;
   fileName?: string;
@@ -16,6 +22,7 @@ export interface ChatMessage {
   isTranscription?: boolean;
   voice?: string; // For TTS requests - stores the selected voice
   isRecording?: boolean; // Per-message recording state for waveform animation
+  structuredData?: Record<string, unknown>; // For structured response messages
 }
 
 export interface ConversationState {
@@ -29,7 +36,7 @@ export const conversationState = atom<ConversationState>({
   default: {
     id: "default",
     messages: [
-      // // Use Case 1: Voice Recording -> Text Transcript
+      // Use Case 1: Voice Recording -> Text Transcript
       // {
       //   id: "mock-1",
       //   role: "user",
@@ -51,7 +58,22 @@ export const conversationState = atom<ConversationState>({
       //   isTranscription: true,
       //   conversation_session_id: "conv_1",
       // },
-
+      // {
+      //   id: "mock-10",
+      //   role: "assistant",
+      //   content: "Structured data received (3 fields)",
+      //   createdAt: Date.now() - 45000,
+      //   kind: "Structured",
+      //   status: "done",
+      //   conversation_session_id: "conv_5",
+      //   structuredData: {
+      //     form: {
+      //       name: "John Doe",
+      //       email: "john.doe@example.com",
+      //       phone: "+1-555-0123",
+      //     },
+      //   },
+      // },
       // // Use Case 2: File Upload -> Text Transcript
       // {
       //   id: "mock-3",
@@ -96,7 +118,6 @@ export const conversationState = atom<ConversationState>({
       //   durationMs: 6200,
       //   conversation_session_id: "conv_3",
       // },
-
       // // Use Case 4: Simple TTS Request -> Voice Response
       // {
       //   id: "mock-7",

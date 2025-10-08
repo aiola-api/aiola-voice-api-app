@@ -3,17 +3,20 @@ import {
   IconAdjustmentsAlt,
   IconCircleFilled,
   IconCopy,
+  IconInfoCircle,
 } from "@tabler/icons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useSettingsWithPersistence } from "@/state/settings";
+import type { SettingsState } from "@/state/settings";
 import { useRecoilValue } from "recoil";
 import { conversationState } from "@/state/conversation";
 import { audioState } from "@/state/audio";
 import { componentClassName } from "@/lib/utils";
-import { APP_VERSION } from "@/lib/constants";
+import { APP_VERSION, AIOLA_SDK_VERSION } from "@/lib/constants";
 import "./ChatHeader.css";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
@@ -59,7 +62,7 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
         <div className="chat-header__left-section">
           <div className="chat-header__content">
             <div className="chat-header__title-row">
-              <h1 className="chat-header__title">Aiola Voice-Api APP</h1>
+              <h1 className="chat-header__title">aiOla Voice Api APP</h1>
               <div className="chat-header__environment-chip">
                 {currentSettings.environment.toUpperCase()}
               </div>
@@ -134,7 +137,10 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                   <IconCopy
                     className="chat-header__copy-icon"
                     onClick={() =>
-                      copyToClipboard(currentSettings.workflowId, "Workflow Id")
+                      copyToClipboard(
+                        currentSettings.workflowId || "",
+                        "Workflow Id"
+                      )
                     }
                   />
                 )}
@@ -169,7 +175,6 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
           </div>
         </div>
         <div className="chat-header__actions">
-          <div className="chat-header__version">v{VERSION}</div>
           <Button
             variant="ghost"
             size="default"
@@ -179,6 +184,13 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
             <IconAdjustmentsAlt />
           </Button>
         </div>
+        <Tooltip
+          className="chat-header__version-icon"
+          content={`version: ${VERSION}
+aiOlaSDK: ${AIOLA_SDK_VERSION}`}
+        >
+          <IconInfoCircle />
+        </Tooltip>
       </div>
     </header>
   );

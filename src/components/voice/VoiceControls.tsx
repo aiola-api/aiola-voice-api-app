@@ -8,14 +8,18 @@ import {
 } from "@tabler/icons-react";
 import { audioState } from "@/state/audio";
 import { conversationState, type ChatMessage } from "@/state/conversation";
-import { settingsState, type STTLanguageCode } from "@/state/settings";
+import {
+  settingsState,
+  type STTLanguageCode,
+  type SettingsState,
+} from "@/state/settings";
 import { type StreamConnection } from "@/state/connection";
 import { useSTT } from "@/hooks/useSTT";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
@@ -737,6 +741,96 @@ export function VoiceControls() {
         });
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        connection.on("structured", (data: any) => {
+          console.log("🔧 Structured event received:", data);
+          console.log("📊 Structured results:", data.results);
+
+          // Check if we have structured data to process
+          if (!data.results || typeof data.results !== "object") {
+            console.warn("⚠️ No structured results to process");
+            return;
+          }
+
+          // Get the current recording message ID to link structured data to the conversation
+          const currentSttMessageId = currentRecordingMessageIdRef.current;
+          if (!currentSttMessageId) {
+            console.warn("⚠️ No current STT message ID for structured data");
+            return;
+          }
+
+          setConversation((prev) => {
+            // Find the current STT message to get its conversation_session_id
+            const currentSttMessage = prev.messages.find(
+              (msg) => msg.id === currentSttMessageId
+            );
+
+            if (!currentSttMessage) {
+              console.warn("⚠️ Could not find current STT message");
+              return prev;
+            }
+
+            // Look for an existing structured message with the same conversation_session_id
+            const existingStructuredMessage = prev.messages.find(
+              (msg) =>
+                msg.kind === "Structured" &&
+                msg.conversation_session_id ===
+                  currentSttMessage.conversation_session_id
+            );
+
+            if (existingStructuredMessage) {
+              // Update existing structured message with new data (merge results)
+              const updatedMessages = prev.messages.map((msg) => {
+                if (msg.id === existingStructuredMessage.id) {
+                  console.log(
+                    "✅ Updating existing structured message with new data"
+                  );
+                  return {
+                    ...msg,
+                    structuredData: {
+                      ...msg.structuredData,
+                      ...data.results,
+                    },
+                    content: `Structured data updated (${
+                      Object.keys(data.results).length
+                    } fields)`,
+                  };
+                }
+                return msg;
+              });
+              return { ...prev, messages: updatedMessages };
+            } else {
+              // Create new structured message
+              const structuredMessage: ChatMessage = {
+                id: `structured_${Date.now()}`,
+                role: "assistant",
+                content: `Structured data received (${
+                  Object.keys(data.results).length
+                } fields)`,
+                createdAt: Date.now(),
+                sessionId: audio.currentSessionId || undefined,
+                conversation_session_id:
+                  currentSttMessage.conversation_session_id,
+                kind: "Structured",
+                status: "done",
+                structuredData: data.results,
+              };
+
+              console.log("✅ Creating new structured message:", {
+                id: structuredMessage.id,
+                conversation_session_id:
+                  structuredMessage.conversation_session_id,
+                resultsCount: Object.keys(data.results).length,
+              });
+
+              return {
+                ...prev,
+                messages: [...prev.messages, structuredMessage],
+              };
+            }
+          });
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         connection.on("error", (error: any) => {
           console.error("❌ Connection Error:", error);
           toast.error(`Error: ${error?.message || "Connection failed"}`);
@@ -1049,7 +1143,7 @@ export function VoiceControls() {
   // Helper function to render microphone state indicator
   const renderMicrophoneIndicator = () => {
     const languageShortLabel = getLanguageShortLabel(
-      currentSettings.stt.language
+      currentSettings.stt.language as STTLanguageCode
     );
 
     switch (displayMicrophoneState) {

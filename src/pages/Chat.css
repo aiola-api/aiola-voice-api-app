@@ -26,8 +26,7 @@
   bottom: 0;
   height: 100%;
   overflow-y: auto;
-  padding-bottom: 120px; /* Space for absolute controls */
-  z-index: 1; /* Lower than ConfigDialog (z-index: 20) */
+  z-index: 0; /* Lower than ConfigDialog (z-index: 20) */
 }
 
 .chat-page__messages-container {
