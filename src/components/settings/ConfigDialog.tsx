@@ -610,10 +610,13 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               </p>
             </div>
 
-            <div className="config-dialog__info-box">
-              <p className="config-dialog__info-text">
-                VAD Config: Using SDK defaults (no override available)
-              </p>
+            <div className="config-dialog__field-group">
+              <Label className="config-dialog__label">VAD Config</Label>
+              <div className="config-dialog__info-box">
+                <p className="config-dialog__info-text">
+                  Using SDK defaults (no override available)
+                </p>
+              </div>
             </div>
           </section>
 
@@ -692,7 +695,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             <div className="config-dialog__info-box">
               <p className="config-dialog__info-text">
                 All configuration settings are automatically cached and will be
-                remembered for future sessions.
+                remembered for future sessions
               </p>
             </div>
           </div>

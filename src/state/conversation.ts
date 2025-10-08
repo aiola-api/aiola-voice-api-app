@@ -1,5 +1,14 @@
 import { atom } from "recoil";
 
+export interface AmplitudeData {
+  average: number;
+  peak: number;
+  rms: number;
+  normalizedAverage: number;
+  normalizedPeak: number;
+  normalizedRms: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: "system" | "user" | "assistant";
@@ -23,6 +32,9 @@ export interface ChatMessage {
   voice?: string; // For TTS requests - stores the selected voice
   isRecording?: boolean; // Per-message recording state for waveform animation
   structuredData?: Record<string, unknown>; // For structured response messages
+  // Per-message amplitude data for waveform visualization
+  amplitudeData?: AmplitudeData;
+  amplitudeHistory?: AmplitudeData[];
 }
 
 export interface ConversationState {
@@ -96,7 +108,6 @@ export const conversationState = atom<ConversationState>({
       //   isTranscription: true,
       //   conversation_session_id: "conv_2",
       // },
-
       // // Use Case 3: Text-to-Speech Request -> Voice Response
       // {
       //   id: "mock-5",

@@ -1,4 +1,4 @@
-import { IconBrackets } from "@tabler/icons-react";
+import { IconListDetails } from "@tabler/icons-react";
 import { withTimeStamp } from "./withTimeStamp";
 import { componentClassName } from "@/lib/utils";
 import type { ChatMessage } from "@/state/conversation";
@@ -40,7 +40,7 @@ function StructuredResponseMessageBase({
       <div className="transcript-message-header">
         <div className="transcript-message-info">
           <div className="transcript-message-icon-text">
-            <IconBrackets className="transcript-message-icon" />
+            <IconListDetails className="transcript-message-icon" />
             <span className="transcript-message-label">Structured Data</span>
           </div>
         </div>

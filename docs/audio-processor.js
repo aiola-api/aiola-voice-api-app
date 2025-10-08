@@ -17,21 +17,60 @@ class AudioProcessor extends AudioWorkletProcessor {
         pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
       }
 
+      // Calculate amplitude levels for waveform visualization
+      const amplitudeData = this.calculateAmplitude(inputChannel);
+
       // Log every 100th frame to verify audio is being captured
       this.frameCount++;
       if (this.frameCount % 100 === 0) {
         console.log(
-          `🎙️ Audio frame ${this.frameCount}: ${pcmData.length} samples`
+          `🎙️ Audio frame ${this.frameCount}: ${
+            pcmData.length
+          } samples, amplitude: ${amplitudeData.average.toFixed(3)}`
         );
       }
 
-      // Send the audio data to the main thread
+      // Send both audio data and amplitude data to the main thread
       this.port.postMessage({
         audio_data: pcmData.buffer,
+        amplitude: amplitudeData,
       });
     }
 
     return true; // Keep processor alive
+  }
+
+  /**
+   * Calculate amplitude levels from audio input
+   * @param {Float32Array} inputChannel - Raw audio input channel
+   * @returns {Object} Amplitude data with average, peak, and RMS values
+   */
+  calculateAmplitude(inputChannel) {
+    let sum = 0;
+    let peak = 0;
+    let rmsSum = 0;
+
+    // Process every 4th sample for performance (reduce from ~44kHz to ~11kHz for amplitude calculation)
+    const step = 4;
+    for (let i = 0; i < inputChannel.length; i += step) {
+      const sample = Math.abs(inputChannel[i]);
+      sum += sample;
+      peak = Math.max(peak, sample);
+      rmsSum += sample * sample;
+    }
+
+    const sampleCount = Math.floor(inputChannel.length / step);
+    const average = sampleCount > 0 ? sum / sampleCount : 0;
+    const rms = Math.sqrt(rmsSum / sampleCount);
+
+    return {
+      average: average,
+      peak: peak,
+      rms: rms,
+      normalizedAverage: Math.min(1, average * 5), // Normalize for visualization (boost quieter sounds)
+      normalizedPeak: Math.min(1, peak * 4),
+      normalizedRms: Math.min(1, rms * 5),
+    };
   }
 }
 

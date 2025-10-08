@@ -13,12 +13,8 @@ export function withTimeStamp<T extends WithTimeStampProps>(
   return function WithTimeStampComponent(props: T) {
     const { message, showTime = true, ...otherProps } = props;
 
-    // Check if this is a TTS playback widget (voice response message)
-    const isTTSPlayback =
-      message.role === "assistant" && message.kind === "Playback";
-
     // Use wider max-width for TTS playback widgets
-    const maxWidth = isTTSPlayback ? "100%" : "60%";
+    const maxWidth = "100%";
 
     return (
       <div className="flex flex-col" style={{ maxWidth }}>

@@ -47,7 +47,8 @@ div[data-radix-dialog-overlay],
 
 /* Dialog Content - Enhanced Glass Effect */
 .config-dialog__content {
-  position: relative;
+  position: absolute;
+  bottom: 1rem;
   z-index: 60;
   background: rgba(250, 250, 250, 0.98);
   border: 3px solid #000000;
@@ -58,10 +59,11 @@ div[data-radix-dialog-overlay],
   overflow: hidden;
   width: 60%;
   max-width: 1000px;
-  max-height: 800px;
+  max-height: calc(100vh - 4rem);
   /* Improved vertical centering - only grow if content needs it */
   height: auto;
   min-height: 60vh;
+  padding-bottom: 2rem;
 }
 
 /* Header Section */
@@ -342,6 +344,7 @@ div[data-radix-dialog-overlay],
   padding: 0.75rem;
   margin-top: 0.75rem;
   width: 100%;
+  text-align: center;
 }
 
 .config-dialog__info-text {

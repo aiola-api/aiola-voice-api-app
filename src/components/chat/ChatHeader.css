@@ -218,7 +218,7 @@
   transition: opacity 0.2s ease;
   position: absolute;
   top: 0rem;
-  right: 0rem;
+  right: 0.5rem;
   z-index: 10;
 }
 

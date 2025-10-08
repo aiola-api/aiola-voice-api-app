@@ -7,6 +7,15 @@ export type MicrophoneState =
   | "connecting"
   | "preparingMic";
 
+export interface AmplitudeData {
+  average: number;
+  peak: number;
+  rms: number;
+  normalizedAverage: number;
+  normalizedPeak: number;
+  normalizedRms: number;
+}
+
 export interface AudioState {
   micAllowed: boolean;
   isRecording: boolean;

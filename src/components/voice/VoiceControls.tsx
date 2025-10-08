@@ -97,7 +97,7 @@ const logConversationState = (
 
 export function VoiceControls() {
   const [audio, setAudio] = useRecoilState(audioState);
-  const [, setConversation] = useRecoilState(conversationState);
+  const [conversation, setConversation] = useRecoilState(conversationState);
   const [settings] = useRecoilState(settingsState);
   const currentSettings = getCurrentSettings(settings);
 
@@ -364,7 +364,44 @@ export function VoiceControls() {
       let audioPacketCount = 0;
       audioWorkletNodeRef.current.port.onmessage = (event) => {
         try {
+          // Send audio data to STT connection
           connection.send(event.data.audio_data);
+
+          // Handle amplitude data for waveform visualization
+          if (event.data.amplitude) {
+            const amplitudeData = event.data.amplitude;
+
+            // Update conversation state with amplitude data for the current recording message
+            const currentRecordingMessageId =
+              currentRecordingMessageIdRef.current;
+            if (currentRecordingMessageId) {
+              setConversation((prev) => {
+                const updatedMessages = prev.messages.map((msg) => {
+                  if (msg.id === currentRecordingMessageId) {
+                    const newHistory = [
+                      ...(msg.amplitudeHistory || []),
+                      amplitudeData,
+                    ];
+                    // Keep only the last 50 amplitude readings for performance
+                    const trimmedHistory = newHistory.slice(-50);
+
+                    return {
+                      ...msg,
+                      amplitudeData,
+                      amplitudeHistory: trimmedHistory,
+                    };
+                  }
+                  return msg;
+                });
+
+                return {
+                  ...prev,
+                  messages: updatedMessages,
+                };
+              });
+            }
+          }
+
           audioPacketCount++;
           if (audioPacketCount % 50 === 0) {
             console.log(`🔊 Sent ${audioPacketCount} audio packets`);
@@ -458,8 +495,8 @@ export function VoiceControls() {
       // Set the current recording message ID FIRST
       currentRecordingMessageIdRef.current = messageId;
 
-      // Clear processed transcripts for the new recording session
-      processedTranscriptsRef.current.delete(messageId);
+      // Clear processed transcripts for the new recording session (new conversation)
+      processedTranscriptsRef.current.clear();
 
       setAudio((prev) => ({
         ...prev,
@@ -594,30 +631,93 @@ export function VoiceControls() {
           );
 
           // Check for duplicate transcripts to prevent appending the same transcript multiple times
-          const currentSttMessageId = currentRecordingMessageIdRef.current;
+          let currentSttMessageId = currentRecordingMessageIdRef.current;
+
+          // If no current STT message ID, find an STT Stream message to associate the transcript with
           if (!currentSttMessageId) {
-            console.warn(
-              "⚠️ No current STT message ID, skipping transcript processing"
+            console.log(
+              "🔍 No current STT message ID, looking for STT Stream message to associate transcript..."
             );
-            return;
-          }
 
-          // Get or create the set of processed transcripts for this conversation session
-          if (!processedTranscriptsRef.current.has(currentSttMessageId)) {
-            processedTranscriptsRef.current.set(currentSttMessageId, new Set());
-          }
-          const processedSet =
-            processedTranscriptsRef.current.get(currentSttMessageId)!;
+            // Debug: Log all message types in conversation
+            const messageTypes = conversation.messages.reduce((acc, msg) => {
+              const kind = msg.kind || "unknown";
+              acc[kind] = (acc[kind] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+            console.log("🔍 Message types in conversation:", messageTypes);
 
-          // If this transcript has already been processed, skip it
-          if (processedSet.has(data.transcript)) {
-            console.log("🔄 Skipping duplicate transcript:", data.transcript);
-            return;
-          }
+            // Rule 1: Try to attach to the last STT response conversation (STT Stream that already has a transcription)
+            const allSttStreamMessages = conversation.messages.filter(
+              (msg) => msg.kind === "STT Stream"
+            );
+            console.log(
+              "🔍 Found",
+              allSttStreamMessages.length,
+              "STT Stream messages in conversation"
+            );
 
-          // Mark this transcript as processed
-          processedSet.add(data.transcript);
-          console.log("✅ Processing new transcript:", data.transcript);
+            // If there are no STT Stream messages, but we have other messages, there might be a timing issue
+            if (
+              allSttStreamMessages.length === 0 &&
+              conversation.messages.length > 0
+            ) {
+              console.warn(
+                "⚠️ No STT Stream messages found, but conversation has other messages. This suggests a timing issue."
+              );
+              console.log(
+                "🔍 Latest messages in conversation:",
+                conversation.messages.slice(-3)
+              );
+            }
+
+            const sttStreamWithTranscription = allSttStreamMessages
+              .filter((sttMsg) =>
+                conversation.messages.some(
+                  (msg) =>
+                    msg.kind === "Transcription" &&
+                    msg.conversation_session_id ===
+                      sttMsg.conversation_session_id
+                )
+              )
+              .sort((a, b) => b.createdAt - a.createdAt); // Most recent first
+
+            console.log(
+              "🔍 Found",
+              sttStreamWithTranscription.length,
+              "STT Stream messages with existing transcriptions"
+            );
+
+            if (sttStreamWithTranscription.length > 0) {
+              currentSttMessageId = sttStreamWithTranscription[0].id;
+              console.log(
+                "✅ Found STT Stream message with existing transcription:",
+                currentSttMessageId,
+                "conversation_session_id:",
+                sttStreamWithTranscription[0].conversation_session_id
+              );
+            } else {
+              // Rule 2: If no STT Stream with transcription exists, link to the last STT request (any STT Stream)
+              const lastSttStreamMessage = allSttStreamMessages.sort(
+                (a, b) => b.createdAt - a.createdAt
+              ); // Most recent first
+
+              if (lastSttStreamMessage.length > 0) {
+                currentSttMessageId = lastSttStreamMessage[0].id;
+                console.log(
+                  "✅ Using last STT Stream message for new transcription:",
+                  currentSttMessageId,
+                  "conversation_session_id:",
+                  lastSttStreamMessage[0].conversation_session_id
+                );
+              } else {
+                console.warn(
+                  "⚠️ No STT Stream message found to associate transcript with, skipping processing"
+                );
+                return;
+              }
+            }
+          }
 
           setConversation((prev) => {
             console.log("🔍 Total messages:", prev.messages.length);
@@ -630,45 +730,222 @@ export function VoiceControls() {
               prev.messages.filter((msg) => msg.kind === "Transcription").length
             );
 
-            // Find the current STT Stream message to get the conversation_session_id
-            const currentSttMessage = prev.messages.find(
-              (msg) => msg.id === currentRecordingMessageIdRef.current
+            // Find the STT Stream message to get the conversation_session_id
+            let currentSttMessage = prev.messages.find(
+              (msg) => msg.id === currentSttMessageId
             );
 
             console.log(
-              "🔍 Current STT message:",
+              "🔍 STT message for transcript:",
               currentSttMessage?.id,
               currentSttMessage?.conversation_session_id
             );
 
-            if (
-              !currentSttMessage ||
-              !currentSttMessage.conversation_session_id
-            ) {
+            // If no STT Stream message was found, scan for existing STT conversations
+            if (!currentSttMessage) {
+              console.log(
+                "📝 No STT Stream message found for ID:",
+                currentSttMessageId,
+                "scanning for existing STT conversations"
+              );
+
+              // Scan for existing STT-related messages (STT Stream or Transcription messages)
+              const sttRelatedMessages = prev.messages.filter(
+                (msg) =>
+                  msg.kind === "STT Stream" ||
+                  msg.kind === "Transcription" ||
+                  (msg.kind === "STT File" && msg.isTranscription)
+              );
+
+              console.log(
+                "🔍 Found",
+                sttRelatedMessages.length,
+                "STT-related messages in conversation"
+              );
+
+              if (sttRelatedMessages.length > 0) {
+                // Find the most recent STT-related message and use its conversation_session_id
+                const mostRecentSttMessage = sttRelatedMessages.sort(
+                  (a, b) => b.createdAt - a.createdAt
+                )[0];
+
+                const existingConversationSessionId =
+                  mostRecentSttMessage.conversation_session_id;
+
+                console.log(
+                  "✅ Found existing STT conversation:",
+                  existingConversationSessionId,
+                  "from message:",
+                  mostRecentSttMessage.id
+                );
+
+                // Create a new STT Stream message linked to the existing conversation
+                const newSttStreamMessage: ChatMessage = {
+                  id: `stt_stream_${Date.now()}`,
+                  role: "user",
+                  content: "🎤 Recording...",
+                  createdAt: Date.now(),
+                  sessionId: audio.currentSessionId || undefined,
+                  conversation_session_id: existingConversationSessionId,
+                  kind: "STT Stream",
+                  status: "done",
+                  isRecording: false,
+                };
+
+                console.log(
+                  "✅ Creating new STT Stream message linked to existing conversation:",
+                  newSttStreamMessage.id,
+                  "with conversation_session_id:",
+                  existingConversationSessionId
+                );
+
+                // Update the conversation state to include the new STT Stream message
+                const updatedMessages = [...prev.messages, newSttStreamMessage];
+                console.log(
+                  "📋 Updated conversation with linked STT Stream message, total messages:",
+                  updatedMessages.length
+                );
+
+                // Update currentSttMessageId to point to the newly created message
+                currentSttMessageId = newSttStreamMessage.id;
+
+                // Find the newly created STT Stream message
+                currentSttMessage = newSttStreamMessage;
+
+                // Return the updated conversation state
+                const newState = {
+                  ...prev,
+                  messages: updatedMessages,
+                };
+
+                console.log(
+                  "✅ Using newly created STT Stream message linked to existing conversation"
+                );
+                return newState;
+              } else {
+                console.log(
+                  "📝 No existing STT conversations found, creating completely new conversation"
+                );
+
+                // Generate a unique conversation session ID for this transcript
+                const transcriptSessionId = `transcript_session_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substr(2, 6)}`;
+
+                // Create a new STT Stream message with a new conversation
+                const newSttStreamMessage: ChatMessage = {
+                  id: `stt_stream_${Date.now()}`,
+                  role: "user",
+                  content: "🎤 Recording...",
+                  createdAt: Date.now(),
+                  sessionId: audio.currentSessionId || undefined,
+                  conversation_session_id: transcriptSessionId,
+                  kind: "STT Stream",
+                  status: "done",
+                  isRecording: false,
+                };
+
+                console.log(
+                  "✅ Creating new STT Stream message with new conversation:",
+                  newSttStreamMessage.id,
+                  "with conversation_session_id:",
+                  transcriptSessionId
+                );
+
+                // Update the conversation state to include the new STT Stream message
+                const updatedMessages = [...prev.messages, newSttStreamMessage];
+                console.log(
+                  "📋 Updated conversation with new STT Stream message, total messages:",
+                  updatedMessages.length
+                );
+
+                // Update currentSttMessageId to point to the newly created message
+                currentSttMessageId = newSttStreamMessage.id;
+
+                // Find the newly created STT Stream message
+                currentSttMessage = newSttStreamMessage;
+
+                // Return the updated conversation state
+                const newState = {
+                  ...prev,
+                  messages: updatedMessages,
+                };
+
+                console.log(
+                  "✅ Using newly created STT Stream message with new conversation"
+                );
+                return newState;
+              }
+            }
+
+            if (!currentSttMessage.conversation_session_id) {
               console.warn(
-                "⚠️ No current STT Stream message found or missing conversation_session_id"
+                "⚠️ STT Stream message missing conversation_session_id"
               );
               return prev;
             }
 
-            // Look for an existing transcription message with the same conversation_session_id
-            const existingTranscriptionMessage = prev.messages.find(
+            // Get or create the set of processed transcripts for this conversation session
+            // Use conversation_session_id as the key to prevent duplicates across the entire conversation
+            const conversationSessionId =
+              currentSttMessage.conversation_session_id;
+            if (!processedTranscriptsRef.current.has(conversationSessionId)) {
+              processedTranscriptsRef.current.set(
+                conversationSessionId,
+                new Set()
+              );
+            }
+            const processedSet = processedTranscriptsRef.current.get(
+              conversationSessionId
+            )!;
+
+            // If this transcript has already been processed for this conversation session, skip it
+            if (processedSet.has(data.transcript)) {
+              console.log(
+                "🔄 Skipping duplicate transcript:",
+                data.transcript,
+                "for conversation:",
+                conversationSessionId
+              );
+              return prev;
+            }
+
+            // Mark this transcript as processed for this conversation session
+            processedSet.add(data.transcript);
+            console.log(
+              "✅ Processing transcript:",
+              data.transcript,
+              "for conversation:",
+              conversationSessionId
+            );
+
+            // Look for the most recent transcription message with the same conversation_session_id
+            const existingTranscriptionMessages = prev.messages.filter(
               (msg) =>
                 msg.kind === "Transcription" &&
                 msg.conversation_session_id ===
-                  currentSttMessage.conversation_session_id &&
-                msg.role === "assistant"
+                  currentSttMessage.conversation_session_id
             );
 
             console.log(
-              "🔍 Existing transcription message:",
+              "🔍 Found",
+              existingTranscriptionMessages.length,
+              "existing transcription messages with conversation_session_id:",
+              currentSttMessage.conversation_session_id
+            );
+
+            // Get the most recent transcription message
+            const existingTranscriptionMessage =
+              existingTranscriptionMessages.length > 0
+                ? existingTranscriptionMessages.sort(
+                    (a, b) => b.createdAt - a.createdAt
+                  )[0]
+                : null;
+
+            console.log(
+              "🔍 Most recent transcription message:",
               existingTranscriptionMessage?.id,
               existingTranscriptionMessage?.content?.substring(0, 100) + "..." // Truncate for readability
-            );
-
-            console.log(
-              "🔍 Looking for transcription message with conversation_session_id:",
-              currentSttMessage.conversation_session_id
             );
 
             if (existingTranscriptionMessage) {
@@ -679,14 +956,14 @@ export function VoiceControls() {
                     ? `${msg.content} ${data.transcript}`
                     : data.transcript;
                   console.log(
-                    "test-x Agent STT response updated:",
+                    "✅ Appending transcript to existing transcription:",
                     data.transcript,
                     "conversation_session_id:",
                     currentSttMessage?.conversation_session_id
                   );
                   console.log(
-                    "✅ Updating existing transcription message:",
-                    data.transcript,
+                    "✅ Old content:",
+                    msg.content,
                     "→ New content:",
                     newContent
                   );
@@ -718,10 +995,6 @@ export function VoiceControls() {
                 isTranscription: true,
               };
 
-              console.log(
-                "test-x New agent STT response created:",
-                data.transcript
-              );
               console.log(
                 "✅ Creating new transcription message:",
                 data.transcript,

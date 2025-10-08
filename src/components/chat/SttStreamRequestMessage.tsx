@@ -39,6 +39,7 @@ function SttStreamRequestMessageBase({
             isUser={true}
             isRecording={message.isRecording || false}
             durationMs={message.durationMs}
+            messageId={message.id}
           />
         </div>
 

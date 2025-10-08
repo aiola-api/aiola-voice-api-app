@@ -6,6 +6,7 @@ import {
   IconInfoCircle,
 } from "@tabler/icons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { useSettingsWithPersistence } from "@/state/settings";
 import type { SettingsState } from "@/state/settings";
 import { useRecoilValue } from "recoil";
@@ -49,10 +50,11 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // Could add toast notification here if available
+      toast.success(`${label} copied to clipboard`);
       console.log(`${label} copied to clipboard`);
     } catch (err) {
       console.error("Failed to copy:", err);
+      toast.error("Failed to copy to clipboard");
     }
   };
 

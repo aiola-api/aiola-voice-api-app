@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { useRecoilValue } from "recoil";
 import WaveSurfer from "wavesurfer.js";
+import { conversationState } from "@/state/conversation";
 
 interface VoiceWaveformProps {
   isUser?: boolean;
   isRecording?: boolean;
   audioUrl?: string;
   durationMs?: number;
+  messageId?: string; // Add messageId to identify which message's amplitude data to use
 }
 
 // Generate a realistic default waveform pattern for visualization
@@ -25,10 +28,18 @@ export function VoiceWaveform({
   isRecording = false,
   audioUrl,
   durationMs,
+  messageId,
 }: VoiceWaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isLoading, setIsLoading] = useState(!!audioUrl);
+
+  // Get amplitude data from conversation state for the specific message
+  const conversation = useRecoilValue(conversationState);
+  const currentMessage = messageId
+    ? conversation.messages.find((msg) => msg.id === messageId)
+    : null;
+  const amplitudeHistory = currentMessage?.amplitudeHistory || [];
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -87,11 +98,28 @@ export function VoiceWaveform({
         wavesurfer.destroy();
       };
     }
-  }, [audioUrl, isRecording, isUser, durationMs]);
+  }, [audioUrl, isRecording, isUser, durationMs, amplitudeHistory, messageId]);
 
-  // For live recording, show animated bars
-  if (isRecording) {
+  // Show amplitude-based waveform bars when we have amplitude data (during/after recording)
+  if (amplitudeHistory.length > 0) {
     const liveBars = 50;
+
+    // Generate bar heights based on amplitude history (final state after recording)
+    const getBarHeights = () => {
+      if (amplitudeHistory.length > 0) {
+        // Use recent amplitude history to create the final waveform
+        const recentData = amplitudeHistory.slice(-liveBars);
+        return recentData.map((amp) => {
+          // Use normalized peak for responsive visualization
+          const amplitude = amp?.normalizedPeak || 0;
+          return Math.max(6, amplitude * 52 + 6); // Scale to 6-58px range for increased sensitivity
+        });
+      }
+      return [];
+    };
+
+    const barHeights = getBarHeights();
+
     return (
       <div className="flex items-center justify-center gap-0.5 h-16 my-2 px-4 rounded-lg bg-opacity-10 w-full max-w-full overflow-hidden">
         {Array.from({ length: liveBars }).map((_, index) => (
@@ -99,9 +127,50 @@ export function VoiceWaveform({
             key={index}
             className={`w-1 rounded-full ${
               isUser ? "bg-black/80" : "bg-white/80"
-            } animate-pulse`}
+            }`}
             style={{
-              height: `${Math.random() * 40 + 20}px`,
+              height: `${barHeights[index] || 6}px`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // For live recording, show animated bars
+  if (isRecording) {
+    const liveBars = 50;
+
+    // Generate bar heights based on amplitude data or fallback to random if no data
+    const getBarHeights = () => {
+      if (amplitudeHistory.length > 0) {
+        // Use recent amplitude history to create a moving waveform
+        const recentData = amplitudeHistory.slice(-liveBars);
+        return recentData.map((amp) => {
+          // Use normalized peak for more responsive visualization
+          const amplitude = amp?.normalizedPeak || 0;
+          return Math.max(6, amplitude * 52 + 6); // Scale to 6-58px range for increased sensitivity
+        });
+      } else {
+        // Fallback to random animation when no amplitude data is available yet
+        return Array.from({ length: liveBars }, () => {
+          return Math.random() * 52 + 6; // Match the new amplitude scaling range
+        });
+      }
+    };
+
+    const barHeights = getBarHeights();
+
+    return (
+      <div className="flex items-center justify-center gap-0.5 h-16 my-2 px-4 rounded-lg bg-opacity-10 w-full max-w-full overflow-hidden">
+        {Array.from({ length: liveBars }).map((_, index) => (
+          <div
+            key={index}
+            className={`w-1 rounded-full transition-all duration-100 ${
+              isUser ? "bg-black/80" : "bg-white/80"
+            }`}
+            style={{
+              height: `${barHeights[index]}px`,
               animationDelay: `${index * 30}ms`,
               animationDuration: `${800 + Math.random() * 400}ms`,
             }}
@@ -111,15 +180,24 @@ export function VoiceWaveform({
     );
   }
 
-  // For finished recordings, show WaveSurfer
+  // For actual audio files (TTS playback, file uploads), show WaveSurfer
+  if (audioUrl && !amplitudeHistory.length) {
+    return (
+      <div className="my-2 px-2 min-w-[300px]">
+        {isLoading && (
+          <div className="flex items-center justify-center h-16">
+            <span className="text-xs text-gray-500">Loading waveform...</span>
+          </div>
+        )}
+        <div ref={containerRef} className={`${isLoading ? "hidden" : ""}`} />
+      </div>
+    );
+  }
+
+  // Default fallback for no amplitude data and no audio URL
   return (
-    <div className="my-2 px-2 min-w-[300px]">
-      {isLoading && (
-        <div className="flex items-center justify-center h-16">
-          <span className="text-xs text-gray-500">Loading waveform...</span>
-        </div>
-      )}
-      <div ref={containerRef} className={`${isLoading ? "hidden" : ""}`} />
+    <div className="flex items-center justify-center h-16 my-2">
+      <span className="text-xs text-gray-400">No waveform data</span>
     </div>
   );
 }
