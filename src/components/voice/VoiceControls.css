@@ -17,9 +17,8 @@
   align-items: center;
   justify-content: center;
   position: relative;
-}
-
-.voice-controls__mic-container {
+  /* Base background - will be overridden by state classes */
+  background-color: #334155;
 }
 
 .voice-controls__language-indicator {
@@ -41,52 +40,38 @@
 
 /* Microphone button states */
 
-.voice-controls__mic-button--idle {
-  border-color: #9ca3af;
-  background-color: #f3f4f6;
+.voice-controls__mic-button.voice-controls__mic-button--idle {
+  border-color: #fcfdfe !important;
+  background-color: #334155 !important; /* Same as base for idle */
 }
 
-.voice-controls__mic-button--idle:hover {
-  background-color: #e5e7eb;
-  border-color: #6b7280;
+.voice-controls__mic-button.voice-controls__mic-button--idle:hover {
+  background-color: black !important;
+  border-color: #fcfdfe !important;
 }
 
-.voice-controls__mic-button--ready {
-  border-color: #d1d5db;
-  background-color: white;
+.voice-controls__mic-button.voice-controls__mic-button--connecting {
+  border-color: #fcfdfe !important;
+  background-color: #334155 !important;
+  border-width: 3px !important;
 }
 
-.voice-controls__mic-button--ready:hover {
-  background-color: #f8fafc;
-  border-color: #9ca3af;
-  transform: scale(1.05);
-}
-
-.voice-controls__mic-button--connected {
-  border-color: #ef4444;
-  background-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
-  transform: scale(1.05);
-}
-
-.voice-controls__mic-button--connected:hover {
-  background-color: #dc2626;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.4);
-}
-
-.voice-controls__mic-button--connecting {
-  border-color: #000000;
-  background-color: white;
-  border-width: 2px;
+.voice-controls__mic-button.voice-controls__mic-button--preparingMic {
+  border-color: #fcfdfe !important;
+  background-color: #dc2626 !important;
+  border-width: 3px !important;
   position: relative;
 }
 
-.voice-controls__mic-button--preparingMic {
-  border-color: white;
-  background-color: #dc2626;
-  border-width: 2px;
-  position: relative;
+.voice-controls__mic-button.voice-controls__mic-button--connected {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+}
+
+.voice-controls__mic-button.voice-controls__mic-button--connected:hover {
+  background-color: #dc2626 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
 }
 
 .voice-controls__connecting-indicator {
@@ -103,11 +88,11 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: black;
+  background-color: white;
   position: absolute;
   top: 40%;
   left: 40%;
-  translate: 0px 40px;
+  transform: translate(0px, 40px);
   z-index: 1000;
 }
 
@@ -120,7 +105,7 @@
   position: absolute;
   top: 40%;
   left: 40%;
-  translate: 0px 40px;
+  transform: translate(0px, 40px);
   z-index: 1000;
 }
 
@@ -136,8 +121,7 @@
 .voice-controls__loading-spinner {
   width: 2rem;
   height: 2rem;
-  border: 3px solid #94a3b8;
-  border-top-color: transparent;
+  border: 3px solid #fcfdfe;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -153,19 +137,19 @@
 .voice-controls__mic-icon--idle {
   height: 2.5rem;
   width: 2.5rem;
-  color: #6b7280;
+  color: white;
 }
 
 .voice-controls__mic-icon--ready {
   height: 2.5rem;
   width: 2.5rem;
-  color: #000000;
+  color: white;
 }
 
 .voice-controls__mic-icon--connecting {
   height: 2.5rem;
   width: 2.5rem;
-  color: #000000;
+  color: white;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -176,7 +160,6 @@
   height: 2.5rem;
   width: 2.5rem;
   color: white;
-  background-color: #dc2626;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -202,43 +185,30 @@
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .voice-controls__mic-button--idle {
-    border-color: #6b7280;
-    background-color: #374151;
+@media (prefers-color-scheme: light) {
+  .voice-controls__mic-button.voice-controls__mic-button--idle {
+    border-color: white !important;
+    background-color: #334155 !important;
   }
 
-  .voice-controls__mic-button--idle:hover {
-    background-color: #4b5563;
-    border-color: #9ca3af;
+  .voice-controls__mic-button.voice-controls__mic-button--idle:hover {
+    background-color: #4b5563 !important;
+    border-color: #fcfdfe !important;
   }
 
-  .voice-controls__mic-button--ready {
-    border-color: #d1d5db;
-    background-color: white;
+  .voice-controls__mic-button.voice-controls__mic-button--ready {
+    border-color: #fcfdfe !important;
+    border-width: 3px !important;
+    background-color: white !important;
   }
 
-  .voice-controls__mic-button--ready:hover {
-    background-color: #f8fafc;
-    border-color: #9ca3af;
-  }
-
-  .voice-controls__mic-button--connected {
-    background-color: #ef4444;
-    border-color: #ef4444;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
-  }
-
-  .voice-controls__mic-button--connected:hover {
-    background-color: #dc2626;
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
+  .voice-controls__mic-button.voice-controls__mic-button--ready:hover {
+    background-color: black !important;
+    border-color: #fcfdfe !important;
+    transform: scale(1.05);
   }
 
   .voice-controls__mic-icon--idle {
-    color: #d1d5db;
-  }
-
-  .voice-controls__mic-icon--ready {
-    color: #000000;
+    color: white;
   }
 }

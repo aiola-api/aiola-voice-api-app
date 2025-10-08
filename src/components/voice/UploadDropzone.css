@@ -18,6 +18,7 @@
   border: 2px solid #e2e8f0;
   background-color: white;
   transition: all 0.2s ease-in-out;
+  cursor: not-allowed ;
 }
 
 .upload-dropzone__upload-button:hover {
@@ -121,10 +122,12 @@
 
   .upload-dropzone__upload-button:hover {
     background-color: #475569;
+    cursor: not-allowed;
   }
 
   .upload-dropzone__upload-icon {
     color: #cbd5e1;
+    cursor: not-allowed;
   }
 
   .upload-dropzone__file-preview {

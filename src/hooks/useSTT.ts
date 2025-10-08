@@ -4,6 +4,20 @@ import { settingsState } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback } from "react";
 
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
 /**
  * Module-level cache for stream connection
  * Note: Cache stores both connection and settings to detect when settings change
@@ -82,24 +96,27 @@ export function useSTT() {
         const client = await getClient();
 
         // Build current settings object for comparison
+        const currentSettings = getCurrentSettings(settings);
         const keywordsObj: Record<string, string> = {};
-        settings.stt.keywords.forEach((keyword) => {
+        currentSettings.stt.keywords.forEach((keyword: string) => {
           keywordsObj[keyword] = keyword;
         });
 
-        const currentSettings = {
-          language: settings.stt.language,
-          keywords: settings.stt.keywords,
-          flowid: settings.stt.flowid,
+        const currentSettingsObj = {
+          language: currentSettings.stt.language,
+          keywords: currentSettings.stt.keywords,
+          workflowId: currentSettings.workflowId,
         };
 
         // Check if we can reuse cached connection
         const settingsChanged =
           !streamCache ||
-          streamCache.settings.language !== currentSettings.language ||
+          streamCache.settings.language !== currentSettingsObj.language ||
           JSON.stringify(streamCache.settings.keywords) !==
-            JSON.stringify(currentSettings.keywords) ||
-          streamCache.settings.flowid !== currentSettings.flowid;
+            JSON.stringify(currentSettingsObj.keywords) ||
+          ((streamCache.settings as any).workflowId ||
+            (streamCache.settings as any).flowid ||
+            "") !== (currentSettingsObj.workflowId || "");
 
         console.log("useSTT streamCache", streamCache);
 
@@ -107,26 +124,26 @@ export function useSTT() {
           // Update state metadata (don't store stream object - it's mutable)
           // Don't set isStreaming here - let the caller manage it
           updateConnectionState({
-            currentFlowId: settings.stt.flowid,
+            currentFlowId: currentSettings.stt.flowid,
             error: undefined,
           });
           return streamCache.connection;
-        } 
+        }
 
         // Settings changed or no cached connection - create new one
 
         const streamRequest: {
           langCode: string;
           keywords: Record<string, string>;
-          flowid?: string;
+          workflowId?: string;
         } = {
-          langCode: settings.stt.language,
+          langCode: currentSettingsObj.language,
           keywords: keywordsObj,
         };
 
-        // Add flowid if present
-        if (settings.stt.flowid) {
-          streamRequest.flowid = settings.stt.flowid;
+        // Add workflowId if present
+        if (currentSettingsObj.workflowId) {
+          streamRequest.workflowId = currentSettingsObj.workflowId;
         }
 
         // Create stream connection (this does NOT auto-connect)
@@ -135,12 +152,12 @@ export function useSTT() {
         // Cache the new connection with its settings
         streamCache = {
           connection: stream as StreamConnection,
-          settings: currentSettings,
+          settings: currentSettingsObj,
         };
 
         // Update state metadata (don't store stream object - it's mutable)
         updateConnectionState({
-          currentFlowId: settings.stt.flowid,
+          currentFlowId: currentSettings.workflowId,
           isStreaming: true,
           error: undefined,
         });
@@ -155,7 +172,7 @@ export function useSTT() {
         });
         throw error;
       }
-    }, [getClient, settings.stt, updateConnectionState]);
+    }, [getClient, settings, updateConnectionState]);
 
   /**
    * Transcribe an audio file
@@ -178,10 +195,11 @@ export function useSTT() {
     async (file: File): Promise<{ text: string }> => {
       try {
         const client = await getClient();
+        const currentSettings = getCurrentSettings(settings);
 
         const transcription = await client.stt.transcribeFile({
           file,
-          language: settings.stt.language,
+          language: currentSettings.stt.language,
           // Note: flowid not supported in transcribeFile API
         });
 
@@ -196,7 +214,7 @@ export function useSTT() {
         throw error;
       }
     },
-    [getClient, settings.stt, updateConnectionState]
+    [getClient, settings, updateConnectionState]
   );
 
   /**

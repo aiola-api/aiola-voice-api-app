@@ -12,6 +12,20 @@ import { componentClassName } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/constants";
 import "./ChatHeader.css";
 
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
 // Version injected at build time from package.json
 const VERSION = APP_VERSION;
 
@@ -21,8 +35,13 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
   const [settings] = useSettingsWithPersistence();
+  const currentSettings = getCurrentSettings(settings);
   const conversation = useRecoilValue(conversationState);
   const audio = useRecoilValue(audioState);
+
+  // Debug logging to track settings changes
+  console.log("ChatHeader settings:", settings);
+  console.log("ChatHeader currentSettings:", currentSettings);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -41,6 +60,9 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
           <div className="chat-header__content">
             <div className="chat-header__title-row">
               <h1 className="chat-header__title">Aiola Voice-Api APP</h1>
+              <div className="chat-header__environment-chip">
+                {currentSettings.environment.toUpperCase()}
+              </div>
               <div className="chat-header__status">
                 <div className="chat-header__microphone-status">
                   <IconCircleFilled
@@ -88,27 +110,31 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
               <div className="chat-header__connection-item">
                 <span className="chat-header__connection-label">API Key:</span>
                 <span className="chat-header__connection-value">
-                  {settings.connection.apiKey
-                    ? `${settings.connection.apiKey.slice(0, 8)}...`
+                  {currentSettings.apiKey
+                    ? `...${currentSettings.apiKey.slice(-15)}`
                     : "Not set"}
                 </span>
-                {settings.connection.apiKey && (
+                {currentSettings.apiKey && (
                   <IconCopy
                     className="chat-header__copy-icon"
                     onClick={() =>
-                      copyToClipboard(settings.connection.apiKey, "API Key")
+                      copyToClipboard(currentSettings.apiKey, "API Key")
                     }
                   />
                 )}
               </div>
               <div className="chat-header__connection-item">
-                <span className="chat-header__connection-label">Flow Id:</span>
-                <span className="chat-header__connection-value">default</span>
-                {settings.stt.flowid && (
+                <span className="chat-header__connection-label">
+                  Workflow Id:
+                </span>
+                <span className="chat-header__connection-value">
+                  {currentSettings.workflowId || "default"}
+                </span>
+                {currentSettings.workflowId && (
                   <IconCopy
                     className="chat-header__copy-icon"
                     onClick={() =>
-                      copyToClipboard(settings.stt.flowid!, "Flow Id")
+                      copyToClipboard(currentSettings.workflowId, "Workflow Id")
                     }
                   />
                 )}
@@ -118,8 +144,8 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                 <span className="chat-header__connection-value">
                   {(() => {
                     const displayValue = audio.currentSessionId
-                      ? `${audio.currentSessionId.substring(0, 16)}...`
-                      : "not-set";
+                      ? `...${audio.currentSessionId.slice(-16)}`
+                      : "connection required❗️";
                     return displayValue;
                   })()}
                 </span>
@@ -137,7 +163,7 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                 <span className="chat-header__connection-label">
                   Execution Id:
                 </span>
-                <span className="chat-header__connection-value">TBD</span>
+                <span className="chat-header__connection-value">TBD 🚧</span>
               </div>
             </div>
           </div>

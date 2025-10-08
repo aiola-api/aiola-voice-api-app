@@ -14,6 +14,20 @@ import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
 
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
 const TTS_VOICES: { value: TTSVoice; label: string }[] = [
   { value: "tara", label: "Tara" },
   { value: "zoe", label: "Zoe" },
@@ -33,9 +47,10 @@ interface TTSDialogProps {
 
 export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
   const [settings] = useRecoilState(settingsState);
+  const currentSettings = getCurrentSettings(settings);
   const [text, setText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState<TTSVoice>(
-    settings.tts.voice
+    currentSettings.tts.voice
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -48,7 +63,7 @@ export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
       return;
     }
 
-    if (!settings.connection.apiKey) {
+    if (!currentSettings.apiKey) {
       toast.error("Please configure your API key first");
       return;
     }

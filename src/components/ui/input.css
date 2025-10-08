@@ -19,6 +19,5 @@
 
 .ui-input:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
   background: #f3f4f6;
 }

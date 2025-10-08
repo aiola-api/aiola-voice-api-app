@@ -14,6 +14,20 @@ import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
 import "./UploadDropzone.css";
 
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
 interface UploadDropzoneProps {
   onUploadComplete?: (transcript: string) => void;
 }
@@ -21,6 +35,7 @@ interface UploadDropzoneProps {
 export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
   const [, setConversation] = useRecoilState(conversationState);
   const [settings] = useRecoilState(settingsState);
+  const currentSettings = getCurrentSettings(settings);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -57,7 +72,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
   };
 
   const handleUpload = async (file: File) => {
-    if (!settings.connection.apiKey) {
+    if (!currentSettings.apiKey) {
       toast.error("Please configure your API key first");
       return;
     }
@@ -176,7 +191,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
         variant="outline"
         size="sm"
         onClick={() => fileInputRef.current?.click()}
-        disabled={isUploading}
+        disabled
         className="upload-dropzone__upload-button"
       >
         <IconFileUpload className="upload-dropzone__upload-icon" />

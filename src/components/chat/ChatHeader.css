@@ -52,6 +52,20 @@
   font-family: monospace;
 }
 
+.chat-header__environment-chip {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
 .chat-header__status {
   display: flex;
   gap: 0.5rem;
@@ -147,12 +161,12 @@
 }
 
 .chat-header__connection-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-start;
-    margin-top: 0.75rem;
-    flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .chat-header__connection-item {

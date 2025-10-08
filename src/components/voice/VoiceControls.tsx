@@ -13,6 +13,20 @@ import { type StreamConnection } from "@/state/connection";
 import { useSTT } from "@/hooks/useSTT";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
+
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
 import { componentClassName } from "@/lib/utils";
 import "./VoiceControls.css";
 
@@ -81,6 +95,7 @@ export function VoiceControls() {
   const [audio, setAudio] = useRecoilState(audioState);
   const [, setConversation] = useRecoilState(conversationState);
   const [settings] = useRecoilState(settingsState);
+  const currentSettings = getCurrentSettings(settings);
 
   // Track the current recording message ID
   const currentRecordingMessageIdRef = useRef<string | null>(null);
@@ -401,7 +416,7 @@ export function VoiceControls() {
 
   const startRecording = async () => {
     console.log("🎤 Starting recording...");
-    if (!settings.connection.apiKey) {
+    if (!currentSettings.apiKey) {
       toast.error("Please configure your API key first");
       return;
     }
@@ -475,7 +490,7 @@ export function VoiceControls() {
 
       // Set preparingMic state after AudioContext setup but before recording starts
       setPreparingMic(true);
-      
+
       // STEP 1: Get microphone stream (permission already granted)
       console.log("🎤 Step 1: Accessing microphone stream...");
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -1033,7 +1048,9 @@ export function VoiceControls() {
 
   // Helper function to render microphone state indicator
   const renderMicrophoneIndicator = () => {
-    const languageShortLabel = getLanguageShortLabel(settings.stt.language);
+    const languageShortLabel = getLanguageShortLabel(
+      currentSettings.stt.language
+    );
 
     switch (displayMicrophoneState) {
       case "connecting":
@@ -1060,7 +1077,7 @@ export function VoiceControls() {
       case "ready":
         return (
           <div className="voice-controls__mic-container">
-            <IconMicrophone className="voice-controls__mic-icon--ready" />
+            <IconMicrophoneOff className="voice-controls__mic-icon--ready" />
             <div className="voice-controls__language-indicator">
               {languageShortLabel}
             </div>
@@ -1072,7 +1089,7 @@ export function VoiceControls() {
             <div className="voice-controls__connecting-indicator">
               <div className="voice-controls__connecting-dot--white" />
             </div>
-            <IconMicrophone className="voice-controls__mic-icon--preparing" />
+            <IconMicrophoneOff className="voice-controls__mic-icon--preparing" />
             <div className="voice-controls__language-indicator">
               {languageShortLabel}
             </div>
@@ -1081,7 +1098,7 @@ export function VoiceControls() {
       default:
         return (
           <div className="voice-controls__mic-container">
-            <IconMicrophoneOff className="voice-controls__mic-icon--idle" />
+            <IconMicrophone className="voice-controls__mic-icon--idle" />
             <div className="voice-controls__language-indicator">
               {languageShortLabel}
             </div>
@@ -1120,11 +1137,11 @@ export function VoiceControls() {
       className={componentClassName("VoiceControls", "voice-controls-buttons")}
     >
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={handleMicPress}
         disabled={isConnecting}
-        className={getButtonClassName()}
+        className={`voice-controls__mic-button ${getButtonClassName()}`}
       >
         {renderMicrophoneIndicator()}
       </Button>

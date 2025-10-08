@@ -1,7 +1,7 @@
 import { useRecoilState, useRecoilValue } from "recoil";
 import { AiolaClient } from "@aiola/sdk";
 import { connectionState, type ConnectionState } from "@/state/connection";
-import { settingsState } from "@/state/settings";
+import { settingsState, type Environment } from "@/state/settings";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +14,9 @@ let connectionCache: {
   accessToken: string;
   apiKey: string;
   baseUrl?: string;
+  authBaseUrl?: string;
+  workflowId?: string;
+  environment: Environment;
   sessionId?: string;
 } | null = null;
 
@@ -28,6 +31,23 @@ let lastNotifiedSessionId: string | undefined = undefined;
  * Prevents duplicate error toast notifications
  */
 let lastNotifiedError: string | undefined = undefined;
+
+/**
+ * Get current environment settings
+ */
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  console.log("getCurrentSettings", { env, settings });
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
 
 /**
  * React hook for managing overall connection to Aiola services
@@ -104,10 +124,16 @@ export function useConnection() {
    */
   const getClient = useCallback(
     async (forceNew: boolean = false): Promise<AiolaClient> => {
-      const { apiKey, endpointOverride: baseUrl } = settings.connection;
+      const currentSettings = getCurrentSettings(settings);
+      const { apiKey, baseUrl, authBaseUrl, workflowId, environment } =
+        currentSettings;
 
       if (!apiKey) {
         throw new Error("API key is required");
+      }
+
+      if (environment === "dev" && !workflowId) {
+        throw new Error("Workflow ID is required for development environment");
       }
 
       // Check if we need to create a new client
@@ -115,7 +141,10 @@ export function useConnection() {
         forceNew ||
         !connectionCache ||
         connectionCache.apiKey !== apiKey ||
-        connectionCache.baseUrl !== baseUrl;
+        connectionCache.baseUrl !== baseUrl ||
+        connectionCache.authBaseUrl !== authBaseUrl ||
+        connectionCache.workflowId !== workflowId ||
+        connectionCache.environment !== environment;
 
       if (needsNewClient) {
         // Close existing session if any
@@ -127,7 +156,8 @@ export function useConnection() {
           try {
             await AiolaClient.closeSession(connectionCache.accessToken, {
               apiKey: connectionCache.apiKey,
-              baseUrl: connectionCache.baseUrl,
+              authBaseUrl: connectionCache.authBaseUrl,
+              workflowId: connectionCache.workflowId,
             });
           } catch {
             // Failed to close previous session - continue anyway
@@ -143,13 +173,24 @@ export function useConnection() {
 
         try {
           // Create new access token
+          console.log("useConnection creating new access token", {
+            apiKey,
+            authBaseUrl,
+            workflowId: environment === "dev" ? workflowId : undefined,
+          });
           const { accessToken } = await AiolaClient.grantToken({
             apiKey,
-            baseUrl,
+            authBaseUrl,
+            workflowId: environment === "dev" ? workflowId : undefined,
           });
 
           // Create new client
-          const client = new AiolaClient({ accessToken, baseUrl });
+          const client = new AiolaClient({
+            accessToken,
+            baseUrl,
+            authBaseUrl,
+            workflowId: environment === "dev" ? workflowId : null,
+          });
 
           // Use access token as session ID (this is what the user means by "session")
           let sessionId: string | undefined;
@@ -163,6 +204,9 @@ export function useConnection() {
             accessToken,
             apiKey,
             baseUrl,
+            authBaseUrl,
+            workflowId,
+            environment,
             sessionId,
           };
 
@@ -194,18 +238,23 @@ export function useConnection() {
       // Return cached client
       return connectionCache!.client;
     },
-    [settings.connection, setConnection]
+    [settings, setConnection]
   );
 
   // Watch for settings changes and recreate client when connection settings change
   useEffect(() => {
-    const { apiKey, endpointOverride: baseUrl } = settings.connection;
+    const currentSettings = getCurrentSettings(settings);
+    const { apiKey, baseUrl, authBaseUrl, workflowId, environment } =
+      currentSettings;
 
     // Only recreate client if we have an existing client and connection settings changed
     if (connectionCache && connection.isConnected) {
       const needsNewClient =
         connectionCache.apiKey !== apiKey ||
-        connectionCache.baseUrl !== baseUrl;
+        connectionCache.baseUrl !== baseUrl ||
+        connectionCache.authBaseUrl !== authBaseUrl ||
+        connectionCache.workflowId !== workflowId ||
+        connectionCache.environment !== environment;
 
       if (needsNewClient) {
         console.log(
@@ -215,6 +264,12 @@ export function useConnection() {
             newApiKey: apiKey,
             oldBaseUrl: connectionCache.baseUrl,
             newBaseUrl: baseUrl,
+            oldAuthBaseUrl: connectionCache.authBaseUrl,
+            newAuthBaseUrl: authBaseUrl,
+            oldWorkflowId: connectionCache.workflowId,
+            newWorkflowId: workflowId,
+            oldEnvironment: connectionCache.environment,
+            newEnvironment: environment,
           }
         );
 
@@ -228,7 +283,7 @@ export function useConnection() {
         });
       }
     }
-  }, [settings.connection, connection.isConnected, getClient]);
+  }, [settings, connection.isConnected, getClient]);
 
   /**
    * Test connection credentials
@@ -262,7 +317,8 @@ export function useConnection() {
       try {
         await AiolaClient.closeSession(connectionCache.accessToken, {
           apiKey: connectionCache.apiKey,
-          baseUrl: connectionCache.baseUrl,
+          authBaseUrl: connectionCache.authBaseUrl,
+          workflowId: connectionCache.workflowId,
         });
       } catch {
         // Failed to close session - continue anyway
@@ -293,10 +349,8 @@ export function useConnection() {
       };
     }
 
-    if (
-      !settings.connection.apiKey ||
-      settings.connection.apiKey.trim().length === 0
-    ) {
+    const currentSettings = getCurrentSettings(settings);
+    if (!currentSettings.apiKey || currentSettings.apiKey.trim().length === 0) {
       return {
         isOnline: false,
         status: "Offline" as const,

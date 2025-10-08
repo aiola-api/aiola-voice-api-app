@@ -14,6 +14,8 @@ import {
   useSettingsWithPersistence,
   type STTLanguageCode,
   type TTSVoice,
+  type Environment,
+  type SettingsState,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
@@ -50,6 +52,48 @@ interface ConfigDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper functions for environment-specific settings
+function getCurrentEnvironmentSettings(settings: SettingsState) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
+function setCurrentEnvironmentSettings(
+  settings: SettingsState,
+  env: Environment,
+  newSettings: {
+    connection?: Partial<SettingsState[Environment]["connection"]>;
+    stt?: Partial<SettingsState[Environment]["stt"]>;
+    tts?: Partial<SettingsState[Environment]["tts"]>;
+  }
+) {
+  return {
+    ...settings,
+    environment: env,
+    [env]: {
+      connection: {
+        ...settings[env].connection,
+        ...newSettings.connection,
+      },
+      stt: {
+        ...settings[env].stt,
+        ...newSettings.stt,
+      },
+      tts: {
+        ...settings[env].tts,
+        ...newSettings.tts,
+      },
+    },
+  };
+}
+
 export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   const [settings, setSettings] = useSettingsWithPersistence();
   const [tempSettings, setTempSettings] = useState(settings);
@@ -61,19 +105,102 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   // Function to check if settings have changed
   const checkSettingsChanged = useCallback(
     (original: typeof settings, current: typeof tempSettings) => {
+      const originalCurrent = getCurrentEnvironmentSettings(original);
+      const currentCurrent = getCurrentEnvironmentSettings(current);
+      const currentEnvironment = current.environment;
+
+      // Track environment-specific changes with more detailed logging
+      const environmentChanged = original.environment !== current.environment;
+      const apiKeyChanged = originalCurrent.apiKey !== currentCurrent.apiKey;
+      const sttLanguageChanged =
+        originalCurrent.stt.language !== currentCurrent.stt.language;
+      const sttKeywordsChanged =
+        JSON.stringify(originalCurrent.stt.keywords) !==
+        JSON.stringify(currentCurrent.stt.keywords);
+      const workflowIdChanged =
+        originalCurrent.workflowId !== currentCurrent.workflowId;
+      const rememberFlowidChanged =
+        originalCurrent.stt.rememberFlowid !==
+        currentCurrent.stt.rememberFlowid;
+      const ttsVoiceChanged =
+        originalCurrent.tts.voice !== currentCurrent.tts.voice;
+
+      // Log environment-specific tracking for debugging
+      if (
+        environmentChanged ||
+        apiKeyChanged ||
+        sttLanguageChanged ||
+        sttKeywordsChanged ||
+        workflowIdChanged ||
+        rememberFlowidChanged ||
+        ttsVoiceChanged
+      ) {
+        console.log(
+          `[checkSettingsChanged] Settings changed detected for ${currentEnvironment} environment:`,
+          {
+            environment: {
+              changed: environmentChanged,
+              from: original.environment,
+              to: currentEnvironment,
+            },
+            apiKey: {
+              changed: apiKeyChanged,
+              currentLength: currentCurrent.apiKey?.length || 0,
+            },
+            stt: {
+              languageChanged: sttLanguageChanged,
+              keywordsChanged: sttKeywordsChanged,
+              rememberFlowidChanged: rememberFlowidChanged,
+              workflowIdChanged: workflowIdChanged,
+            },
+            tts: {
+              voiceChanged: ttsVoiceChanged,
+            },
+          }
+        );
+      }
+
       return (
-        original.connection.apiKey !== current.connection.apiKey ||
-        original.connection.endpointOverride !==
-          current.connection.endpointOverride ||
-        original.stt.language !== current.stt.language ||
-        JSON.stringify(original.stt.keywords) !==
-          JSON.stringify(current.stt.keywords) ||
-        original.stt.flowid !== current.stt.flowid ||
-        original.stt.rememberFlowid !== current.stt.rememberFlowid ||
-        original.tts.voice !== current.tts.voice
+        apiKeyChanged ||
+        environmentChanged ||
+        sttLanguageChanged ||
+        sttKeywordsChanged ||
+        workflowIdChanged ||
+        rememberFlowidChanged ||
+        ttsVoiceChanged
       );
     },
     []
+  );
+
+  // Function to handle environment switching
+  const switchEnvironment = useCallback(
+    (newEnvironment: Environment) => {
+      // Save current environment settings before switching
+      const currentEnv = tempSettings.environment;
+      const updatedSettings = setCurrentEnvironmentSettings(
+        tempSettings,
+        currentEnv,
+        getCurrentEnvironmentSettings(tempSettings)
+      );
+
+      // Switch to new environment and load its settings
+      const newSettings = {
+        ...updatedSettings,
+        environment: newEnvironment,
+      };
+
+      // Only update local temp settings - don't update global state yet
+      console.log("ConfigDialog: Switching environment to", newEnvironment);
+      console.log("ConfigDialog: New temp settings:", newSettings);
+      setTempSettings(newSettings);
+
+      // Mark that settings have changed so connect button shows "Reload"
+      setHasSettingsChanged(true);
+
+      // Note: Global settings state and localStorage will be updated only when user clicks Connect/Reload
+    },
+    [tempSettings]
   );
 
   // Update tempSettings only when dialog first opens
@@ -132,7 +259,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
 
   const handleSave = async () => {
     // Validate API key - use input value (tempSettings), not localStorage
-    if (!tempSettings.connection.apiKey.trim()) {
+    const currentEnv = tempSettings.environment;
+    if (!tempSettings[currentEnv].connection.apiKey.trim()) {
       toast.error("API Key is required");
       return;
     }
@@ -142,16 +270,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       // Save settings first
       const settingsToSave = {
         ...tempSettings,
-        connection: {
-          ...tempSettings.connection,
-          apiKey: tempSettings.connection.apiKey,
-        },
-        stt: {
-          ...tempSettings.stt,
-          flowid: tempSettings.stt.rememberFlowid
-            ? tempSettings.stt.flowid
-            : "",
-          rememberFlowid: tempSettings.stt.rememberFlowid,
+        [currentEnv]: {
+          ...tempSettings[currentEnv],
+          stt: {
+            ...tempSettings[currentEnv].stt,
+            rememberFlowid: tempSettings[currentEnv].stt.rememberFlowid,
+          },
         },
       };
 
@@ -178,16 +302,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       // Save to localStorage (API key always saved, flowid saved if rememberFlowid is true)
       const settingsToSave = {
         ...tempSettings,
-        connection: {
-          ...tempSettings.connection,
-          apiKey: tempSettings.connection.apiKey,
-        },
-        stt: {
-          ...tempSettings.stt,
-          flowid: tempSettings.stt.rememberFlowid
-            ? tempSettings.stt.flowid
-            : "",
-          rememberFlowid: tempSettings.stt.rememberFlowid,
+        [currentEnv]: {
+          ...tempSettings[currentEnv],
+          stt: {
+            ...tempSettings[currentEnv].stt,
+            rememberFlowid: tempSettings[currentEnv].stt.rememberFlowid,
+          },
         },
       };
 
@@ -206,16 +326,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       // Save to localStorage (API key always saved, flowid saved if rememberFlowid is true)
       const settingsToSave = {
         ...tempSettings,
-        connection: {
-          ...tempSettings.connection,
-          apiKey: tempSettings.connection.apiKey,
-        },
-        stt: {
-          ...tempSettings.stt,
-          flowid: tempSettings.stt.rememberFlowid
-            ? tempSettings.stt.flowid
-            : "",
-          rememberFlowid: tempSettings.stt.rememberFlowid,
+        [currentEnv]: {
+          ...tempSettings[currentEnv],
+          stt: {
+            ...tempSettings[currentEnv].stt,
+            rememberFlowid: tempSettings[currentEnv].stt.rememberFlowid,
+          },
         },
       };
 
@@ -285,7 +401,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               <Input
                 id="api-key"
                 type="password"
-                value={tempSettings.connection.apiKey}
+                value={tempSettings[tempSettings.environment].connection.apiKey}
                 onChange={(e) => {
                   const newApiKey = e.target.value;
                   console.log("[ConfigDialog] API key changed:", {
@@ -295,11 +411,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                       newApiKey.substring(0, 10) +
                       (newApiKey.length > 10 ? "..." : ""),
                   });
+                  const currentEnv = tempSettings.environment;
                   const updatedTempSettings = {
                     ...tempSettings,
-                    connection: {
-                      ...tempSettings.connection,
-                      apiKey: newApiKey,
+                    [currentEnv]: {
+                      ...tempSettings[currentEnv],
+                      connection: {
+                        ...tempSettings[currentEnv].connection,
+                        apiKey: newApiKey,
+                      },
                     },
                   };
                   setTempSettings(updatedTempSettings);
@@ -307,16 +427,13 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                   // Always save API key to localStorage immediately
                   const settingsToSave = {
                     ...updatedTempSettings,
-                    connection: {
-                      ...updatedTempSettings.connection,
-                      apiKey: newApiKey,
-                    },
-                    stt: {
-                      ...updatedTempSettings.stt,
-                      flowid: updatedTempSettings.stt.rememberFlowid
-                        ? updatedTempSettings.stt.flowid
-                        : "",
-                      rememberFlowid: updatedTempSettings.stt.rememberFlowid,
+                    [currentEnv]: {
+                      ...updatedTempSettings[currentEnv],
+                      stt: {
+                        ...updatedTempSettings[currentEnv].stt,
+                        rememberFlowid:
+                          updatedTempSettings[currentEnv].stt.rememberFlowid,
+                      },
                     },
                   };
                   localStorage.setItem(
@@ -331,32 +448,72 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             </div>
 
             <div className="config-dialog__field-group">
-              <Label htmlFor="endpoint" className="config-dialog__label">
-                Endpoint Override
+              <Label htmlFor="workflowId" className="config-dialog__label">
+                Workflow ID
               </Label>
               <Input
-                id="endpoint"
-                value={tempSettings.connection.endpointOverride || ""}
+                id="workflowId"
+                value={
+                  tempSettings[tempSettings.environment].connection
+                    .workflowId || ""
+                }
                 onChange={(e) => {
-                  const newEndpoint = e.target.value;
-                  console.log("[ConfigDialog] Endpoint override changed:", {
-                    from: tempSettings.connection.endpointOverride || "",
-                    to: newEndpoint,
-                    hasValue: !!newEndpoint,
+                  const newWorkflowId = e.target.value;
+                  console.log("[ConfigDialog] Workflow ID changed:", {
+                    from:
+                      tempSettings[tempSettings.environment].connection
+                        .workflowId || "",
+                    to: newWorkflowId,
+                    hasValue: !!newWorkflowId,
                   });
+                  const currentEnv = tempSettings.environment;
                   setTempSettings({
                     ...tempSettings,
-                    connection: {
-                      ...tempSettings.connection,
-                      endpointOverride: e.target.value,
+                    [currentEnv]: {
+                      ...tempSettings[currentEnv],
+                      connection: {
+                        ...tempSettings[currentEnv].connection,
+                        workflowId: e.target.value,
+                      },
                     },
                   });
                 }}
-                placeholder="Leave empty to use SDK default"
+                placeholder="Enter workflow ID for STT processing"
                 className="config-dialog__input"
               />
               <p className="config-dialog__helper-text">
-                Optional: Override the default API endpoint URL
+                Optional: SDK will use default workflow if empty
+              </p>
+            </div>
+
+            <div className="config-dialog__field-group">
+              <Label className="config-dialog__label">Environment</Label>
+              <div className="config-dialog__toggle-container">
+                <button
+                  type="button"
+                  onClick={() => switchEnvironment("prod")}
+                  className={`config-dialog__toggle-button ${
+                    tempSettings.environment === "prod"
+                      ? "config-dialog__toggle-button--active"
+                      : ""
+                  }`}
+                >
+                  Prod
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchEnvironment("dev")}
+                  className={`config-dialog__toggle-button ${
+                    tempSettings.environment === "dev"
+                      ? "config-dialog__toggle-button--active"
+                      : ""
+                  }`}
+                >
+                  Dev
+                </button>
+              </div>
+              <p className="config-dialog__helper-text">
+                Select the API environment: Production or Development
               </p>
             </div>
           </section>
@@ -371,36 +528,6 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             </div>
 
             <div className="config-dialog__field-group">
-              <Label htmlFor="flowid" className="config-dialog__label">
-                Flow ID
-              </Label>
-              <Input
-                id="flowid"
-                value={tempSettings.stt.flowid}
-                onChange={(e) => {
-                  const newFlowid = e.target.value;
-                  console.log("[ConfigDialog] STT Flow ID changed:", {
-                    from: tempSettings.stt.flowid || "",
-                    to: newFlowid,
-                    hasValue: !!newFlowid,
-                  });
-                  setTempSettings({
-                    ...tempSettings,
-                    stt: {
-                      ...tempSettings.stt,
-                      flowid: e.target.value,
-                    },
-                  });
-                }}
-                placeholder="Enter flow ID for STT processing"
-                className="config-dialog__input"
-              />
-              <p className="config-dialog__helper-text">
-                Optional: SDK will use default flow if empty
-              </p>
-            </div>
-
-            <div className="config-dialog__field-group">
               <Label
                 htmlFor="stt-language"
                 className="config-dialog__label config-dialog__label--required"
@@ -408,20 +535,24 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 Language/Accent
               </Label>
               <Select
-                value={tempSettings.stt.language}
+                value={tempSettings[tempSettings.environment].stt.language}
                 onValueChange={(value) => {
                   console.log("[ConfigDialog] STT language changed:", {
-                    from: tempSettings.stt.language,
+                    from: tempSettings[tempSettings.environment].stt.language,
                     to: value,
                     languageLabel: STT_LANGUAGES.find(
                       (lang) => lang.value === value
                     )?.label,
                   });
+                  const currentEnv = tempSettings.environment;
                   setTempSettings({
                     ...tempSettings,
-                    stt: {
-                      ...tempSettings.stt,
-                      language: value as STTLanguageCode,
+                    [currentEnv]: {
+                      ...tempSettings[currentEnv],
+                      stt: {
+                        ...tempSettings[currentEnv].stt,
+                        language: value as STTLanguageCode,
+                      },
                     },
                   });
                 }}
@@ -445,22 +576,28 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               </Label>
               <Textarea
                 id="keywords"
-                value={tempSettings.stt.keywords.join(", ")}
+                value={tempSettings[tempSettings.environment].stt.keywords.join(
+                  ", "
+                )}
                 onChange={(e) => {
                   const newKeywords = e.target.value
                     .split(",")
                     .map((k) => k.trim())
                     .filter(Boolean);
                   console.log("[ConfigDialog] STT keywords changed:", {
-                    from: tempSettings.stt.keywords,
+                    from: tempSettings[tempSettings.environment].stt.keywords,
                     to: newKeywords,
                     count: newKeywords.length,
                   });
+                  const currentEnv = tempSettings.environment;
                   setTempSettings({
                     ...tempSettings,
-                    stt: {
-                      ...tempSettings.stt,
-                      keywords: newKeywords,
+                    [currentEnv]: {
+                      ...tempSettings[currentEnv],
+                      stt: {
+                        ...tempSettings[currentEnv].stt,
+                        keywords: newKeywords,
+                      },
                     },
                   });
                 }}
@@ -494,20 +631,24 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 Voice
               </Label>
               <Select
-                value={tempSettings.tts.voice}
+                value={tempSettings[tempSettings.environment].tts.voice}
                 onValueChange={(value) => {
                   console.log("[ConfigDialog] TTS voice changed:", {
-                    from: tempSettings.tts.voice,
+                    from: tempSettings[tempSettings.environment].tts.voice,
                     to: value,
                     voiceLabel: TTS_VOICES.find(
                       (voice) => voice.value === value
                     )?.label,
                   });
+                  const currentEnv = tempSettings.environment;
                   setTempSettings({
                     ...tempSettings,
-                    tts: {
-                      ...tempSettings.tts,
-                      voice: value as TTSVoice,
+                    [currentEnv]: {
+                      ...tempSettings[currentEnv],
+                      tts: {
+                        ...tempSettings[currentEnv].tts,
+                        voice: value as TTSVoice,
+                      },
                     },
                   });
                 }}

@@ -7,6 +7,20 @@ import { settingsState } from "@/state/settings";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 
+// Helper function to get current environment settings
+function getCurrentSettings(settings: any) {
+  const env = settings.environment;
+  return {
+    apiKey: settings[env].connection.apiKey,
+    baseUrl: settings[env].connection.baseUrl,
+    authBaseUrl: settings[env].connection.authBaseUrl,
+    workflowId: settings[env].connection.workflowId,
+    environment: env,
+    stt: settings[env].stt,
+    tts: settings[env].tts,
+  };
+}
+
 interface TTSPlaybackButtonProps {
   messageId: string;
   text: string;
@@ -20,6 +34,7 @@ export function TTSPlaybackButton({
 }: TTSPlaybackButtonProps) {
   const [audio, setAudio] = useRecoilState(audioState);
   const [settings] = useRecoilState(settingsState);
+  const currentSettings = getCurrentSettings(settings);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { generateTTS, isGenerating } = useTTS();
@@ -58,7 +73,7 @@ export function TTSPlaybackButton({
     try {
       // Check if we already have the audio blob cached
       if (!audioBlob) {
-        if (!settings.connection.apiKey) {
+        if (!currentSettings.apiKey) {
           toast.error("Please configure your API key first");
           return;
         }

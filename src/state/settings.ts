@@ -26,40 +26,86 @@ export type TTSVoice =
   | "julia"
   | "leah";
 
+export type Environment = "prod" | "dev";
+
 export interface SettingsState {
-  connection: {
-    apiKey: string;
-    endpointOverride?: string;
+  environment: Environment;
+  prod: {
+    connection: {
+      apiKey: string;
+      baseUrl: string;
+      authBaseUrl: string;
+      workflowId?: string;
+    };
+    stt: {
+      language: STTLanguageCode;
+      keywords: string[];
+      vad: "default";
+      rememberFlowid: boolean;
+    };
+    tts: {
+      voice: TTSVoice;
+      language: "en";
+    };
   };
-  stt: {
-    language: STTLanguageCode;
-    keywords: string[];
-    vad: "default";
-    flowid?: string;
-    rememberFlowid: boolean;
-  };
-  tts: {
-    voice: TTSVoice;
-    language: "en";
+  dev: {
+    connection: {
+      apiKey: string;
+      baseUrl: string;
+      authBaseUrl: string;
+      workflowId?: string;
+    };
+    stt: {
+      language: STTLanguageCode;
+      keywords: string[];
+      vad: "default";
+      rememberFlowid: boolean;
+    };
+    tts: {
+      voice: TTSVoice;
+      language: "en";
+    };
   };
 }
 
 // Default settings
 const defaultSettings: SettingsState = {
-  connection: {
-    apiKey: "",
-    endpointOverride: "",
+  environment: "prod",
+  prod: {
+    connection: {
+      apiKey: "",
+      baseUrl: "https://apis.aiola.ai",
+      authBaseUrl: "https://auth.aiola.ai",
+      workflowId: "",
+    },
+    stt: {
+      language: "en_US",
+      keywords: [],
+      vad: "default",
+      rememberFlowid: true,
+    },
+    tts: {
+      voice: "tara",
+      language: "en",
+    },
   },
-  stt: {
-    language: "en_US",
-    keywords: [],
-    vad: "default",
-    flowid: "",
-    rememberFlowid: true,
-  },
-  tts: {
-    voice: "tara",
-    language: "en",
+  dev: {
+    connection: {
+      apiKey: "",
+      baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
+      authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+      workflowId: "",
+    },
+    stt: {
+      language: "en_US",
+      keywords: [],
+      vad: "default",
+      rememberFlowid: true,
+    },
+    tts: {
+      voice: "tara",
+      language: "en",
+    },
   },
 };
 
@@ -76,9 +122,66 @@ function loadSettingsFromStorage(): SettingsState {
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
 
+      // Check if this is the old format (has flat structure)
+      if (parsed.connection && typeof parsed.connection.apiKey === "string") {
+        console.log(
+          "[loadSettingsFromStorage] Migrating from old settings format"
+        );
+
+        // Migrate from old format to new format
+        const migratedSettings: SettingsState = {
+          environment: parsed.environment || "prod",
+          prod: {
+            connection: {
+              apiKey: parsed.connection.apiKey || "",
+              baseUrl: "https://apis.aiola.ai",
+              authBaseUrl: "https://auth.aiola.ai",
+              workflowId: parsed.stt?.flowid || "",
+            },
+            stt: {
+              language: parsed.stt?.language || "en_US",
+              keywords: parsed.stt?.keywords || [],
+              vad: "default",
+              rememberFlowid: parsed.stt?.rememberFlowid !== false,
+            },
+            tts: {
+              voice: parsed.tts?.voice || "tara",
+              language: "en",
+            },
+          },
+          dev: {
+            connection: {
+              apiKey: "", // Dev API key starts empty
+              baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
+              authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+              workflowId: "",
+            },
+            stt: {
+              language: "en_US",
+              keywords: [],
+              vad: "default",
+              rememberFlowid: true,
+            },
+            tts: {
+              voice: "tara",
+              language: "en",
+            },
+          },
+        };
+
+        // Save the migrated settings back to localStorage
+        localStorage.setItem(
+          "aiola-settings",
+          JSON.stringify(migratedSettings)
+        );
+
+        console.log("[loadSettingsFromStorage] Settings migrated and loaded");
+        return migratedSettings;
+      }
+
       // Validate that apiKey is a string and doesn't contain corrupted data
-      if (parsed.connection?.apiKey) {
-        const apiKey = parsed.connection.apiKey;
+      if (parsed.prod?.connection?.apiKey) {
+        const apiKey = parsed.prod.connection.apiKey;
 
         // Check if it's not a string or contains corrupted data patterns
         if (
@@ -89,17 +192,55 @@ function loadSettingsFromStorage(): SettingsState {
           console.warn(
             "Corrupted apiKey detected in localStorage, clearing it"
           );
-          parsed.connection.apiKey = "";
+          parsed.prod.connection.apiKey = "";
           // Save the fixed data back to localStorage
           localStorage.setItem(
             "aiola-settings",
             JSON.stringify({
               ...defaultSettings,
               ...parsed,
-              connection: {
-                ...defaultSettings.connection,
-                ...parsed.connection,
-                apiKey: "",
+              prod: {
+                ...defaultSettings.prod,
+                ...parsed.prod,
+                connection: {
+                  ...defaultSettings.prod.connection,
+                  ...parsed.prod?.connection,
+                  apiKey: "",
+                },
+              },
+            })
+          );
+        }
+      }
+
+      // Also validate dev connection apiKey
+      if (parsed.dev?.connection?.apiKey) {
+        const apiKey = parsed.dev.connection.apiKey;
+
+        // Check if it's not a string or contains corrupted data patterns
+        if (
+          typeof apiKey !== "string" ||
+          apiKey.includes("authorization Bearer") ||
+          apiKey.includes('{"connection":')
+        ) {
+          console.warn(
+            "Corrupted dev apiKey detected in localStorage, clearing it"
+          );
+          parsed.dev.connection.apiKey = "";
+          // Save the fixed data back to localStorage
+          localStorage.setItem(
+            "aiola-settings",
+            JSON.stringify({
+              ...defaultSettings,
+              ...parsed,
+              dev: {
+                ...defaultSettings.dev,
+                ...parsed.dev,
+                connection: {
+                  ...defaultSettings.dev.connection,
+                  ...parsed.dev?.connection,
+                  apiKey: "",
+                },
               },
             })
           );
@@ -110,27 +251,34 @@ function loadSettingsFromStorage(): SettingsState {
       const loadedSettings = {
         ...defaultSettings,
         ...parsed,
-        connection: {
-          ...defaultSettings.connection,
-          ...(parsed.connection || {}),
+        prod: {
+          ...defaultSettings.prod,
+          ...(parsed.prod || {}),
+          connection: {
+            ...defaultSettings.prod.connection,
+            ...(parsed.prod?.connection || {}),
+          },
         },
-        stt: {
-          ...defaultSettings.stt,
-          ...(parsed.stt || {}),
-        },
-        tts: {
-          ...defaultSettings.tts,
-          ...(parsed.tts || {}),
+        dev: {
+          ...defaultSettings.dev,
+          ...(parsed.dev || {}),
+          connection: {
+            ...defaultSettings.dev.connection,
+            ...(parsed.dev?.connection || {}),
+          },
         },
       };
 
       console.log(
         "[loadSettingsFromStorage] Settings loaded from localStorage:",
         {
-          hasApiKey: !!loadedSettings.connection.apiKey,
-          sttLanguage: loadedSettings.stt.language,
-          ttsVoice: loadedSettings.tts.voice,
-          rememberFlowid: loadedSettings.stt.rememberFlowid,
+          environment: loadedSettings.environment,
+          hasProdApiKey: !!loadedSettings.prod.connection.apiKey,
+          hasDevApiKey: !!loadedSettings.dev.connection.apiKey,
+          prodSttLanguage: loadedSettings.prod.stt.language,
+          prodTtsVoice: loadedSettings.prod.tts.voice,
+          devSttLanguage: loadedSettings.dev.stt.language,
+          devTtsVoice: loadedSettings.dev.tts.voice,
           source: "localStorage",
         }
       );
@@ -185,11 +333,18 @@ export function SettingsInitializer() {
     // Add a small delay to ensure localStorage is available
     const timer = setTimeout(() => {
       const loadedSettings = loadSettingsFromStorage();
+      // Use getCurrentSettings for logging current environment settings
+      const currentSettings = {
+        apiKey: loadedSettings[loadedSettings.environment].connection.apiKey,
+        stt: loadedSettings[loadedSettings.environment].stt,
+        tts: loadedSettings[loadedSettings.environment].tts,
+      };
       console.log("[SettingsInitializer] Settings loaded from localStorage:", {
-        hasApiKey: !!loadedSettings.connection.apiKey,
-        sttLanguage: loadedSettings.stt.language,
-        ttsVoice: loadedSettings.tts.voice,
-        rememberFlowid: loadedSettings.stt.rememberFlowid,
+        environment: loadedSettings.environment,
+        hasApiKey: !!currentSettings.apiKey,
+        sttLanguage: currentSettings.stt.language,
+        ttsVoice: currentSettings.tts.voice,
+        rememberFlowid: currentSettings.stt.rememberFlowid,
       });
       setSettings(loadedSettings);
     }, 100);

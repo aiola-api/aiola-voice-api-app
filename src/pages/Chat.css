@@ -9,6 +9,7 @@
 
 .chat-page__header {
   flex-shrink: 0;
+  border: 3px solid white;
 }
 
 .chat-page__main {
@@ -38,36 +39,29 @@
   align-items: center;
 }
 
-.chat-page__controls {
+.chat-page__controls-content {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: white;
-  border-top: 1px solid #e1e5e9;
-  padding: 2rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.chat-page__controls-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background-color: black;
+  border: 3px solid white;
+  justify-content: right;
   gap: 1rem;
+  height: 80px
 }
 
 .chat-page__upload-dropzone {
   position: absolute;
   bottom: 1.5rem;
-  right: 4.3rem;
+  right: 4.8rem;
   z-index: 15; /* Higher than messages but lower than config dialog */
 }
 
 .chat-page__voice-controls {
   position: absolute;
   bottom: 2rem;
-  right: 0rem;
+  right: 0.5rem;
   z-index: 15; /* Higher than messages but lower than config dialog */
 }
 
