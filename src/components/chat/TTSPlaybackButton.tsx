@@ -27,6 +27,7 @@ interface TTSPlaybackButtonProps {
   className?: string;
 }
 
+
 export function TTSPlaybackButton({
   messageId,
   text,
@@ -51,6 +52,11 @@ export function TTSPlaybackButton({
     };
   }, []);
 
+  // Clear cache when text or TTS settings change
+  useEffect(() => {
+    setAudioBlob(null);
+  }, [text, currentSettings.tts.voice, currentSettings.tts.language]);
+
   const handlePlayPause = async () => {
     if (isPlaying) {
       // Stop current playback
@@ -71,22 +77,71 @@ export function TTSPlaybackButton({
     }
 
     try {
-      // Check if we already have the audio blob cached
-      if (!audioBlob) {
-        if (!currentSettings.apiKey) {
-          toast.error("Please configure your API key first");
-          return;
-        }
+      if (!currentSettings.apiKey) {
+        toast.error("Please configure your API key first");
+        return;
+      }
 
-        // Generate TTS audio using hook
-        const blob = await generateTTS(text);
+      if (!text || text.trim().length === 0) {
+        toast.error("No text to convert to speech");
+        return;
+      }
+
+      let blob: Blob;
+      
+      // Use cached audio if available, otherwise generate fresh
+      if (audioBlob) {
+        console.log("TTS Button: Using cached audio");
+        blob = audioBlob;
+      } else {
+        console.log("TTS Button: Generating fresh audio for text:", text.substring(0, 100) + "...");
+        blob = await generateTTS(text);
+        console.log("TTS Button: Audio generated successfully", { size: blob.size });
+        // Cache the blob after successful generation
         setAudioBlob(blob);
       }
 
-      // Create audio element and play
-      const audioUrl = URL.createObjectURL(audioBlob || new Blob());
+      // Create audio element and ensure it's loaded before playing
+      const audioUrl = URL.createObjectURL(blob);
       const audioElement = new Audio(audioUrl);
       audioRef.current = audioElement;
+
+      // Wait for the audio to be ready to play with retry logic
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error("Audio loading timeout"));
+            }, 3000);
+
+            audioElement.addEventListener("canplaythrough", () => {
+              clearTimeout(timeout);
+              resolve();
+            }, { once: true });
+
+            audioElement.addEventListener("error", (e) => {
+              clearTimeout(timeout);
+              console.error("Audio loading error:", e);
+              reject(new Error("Audio failed to load"));
+            }, { once: true });
+
+            // Start loading the audio
+            audioElement.load();
+          });
+          break; // Success, exit retry loop
+        } catch (error) {
+          retryCount++;
+          if (retryCount > maxRetries) {
+            throw error; // Re-throw if we've exhausted retries
+          }
+          console.log(`TTS: Audio load attempt ${retryCount} failed, retrying...`);
+          // Small delay before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
 
       audioElement.addEventListener("ended", () => {
         setAudio((prev) => ({ ...prev, playingMessageId: undefined }));
@@ -104,7 +159,21 @@ export function TTSPlaybackButton({
       await audioElement.play();
     } catch (error) {
       console.error("TTS Error:", error);
-      toast.error("Text-to-speech failed");
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("API key")) {
+          toast.error("API key is required for text-to-speech");
+        } else if (error.message.includes("No audio data")) {
+          toast.error("No audio data received from TTS service");
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          toast.error("Network error: Check your connection and API settings");
+        } else {
+          toast.error(`TTS failed: ${error.message}`);
+        }
+      } else {
+        toast.error("Text-to-speech failed");
+      }
     }
   };
 

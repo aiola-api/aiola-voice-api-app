@@ -2,6 +2,7 @@ import { IconListDetails } from "@tabler/icons-react";
 import { withTimeStamp } from "./withTimeStamp";
 import { componentClassName } from "@/lib/utils";
 import type { ChatMessage } from "@/state/conversation";
+import { TTSPlaybackButton } from "./TTSPlaybackButton";
 import "./chat-messages.css";
 
 interface StructuredResponseMessageProps {
@@ -54,6 +55,13 @@ function StructuredResponseMessageBase({
               __html: formatStructuredData(message.structuredData),
             }}
           />
+          <div className="tts-controls">
+            <TTSPlaybackButton
+              messageId={message.id}
+              text={JSON.stringify(message.structuredData, null, 2)}
+              className="tts-button-response"
+            />
+          </div>
         </div>
       )}
     </div>

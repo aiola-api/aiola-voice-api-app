@@ -29,14 +29,24 @@ export function useTTS() {
     async (text: string, voice?: string): Promise<Blob> => {
       try {
         setIsGenerating(true);
+        console.log("TTS: Starting generation", { text: text.substring(0, 50) + "...", voice });
+        
         const client = await getClient();
+        console.log("TTS: Client obtained");
 
         const currentSettings = getCurrentSettings(settings);
+        console.log("TTS: Settings", { 
+          voice: voice || currentSettings.tts.voice, 
+          language: currentSettings.tts.language,
+          hasApiKey: !!currentSettings.apiKey 
+        });
+
         const audioStream = await client.tts.synthesize({
           text,
           voice: (voice || currentSettings.tts.voice) as string,
           language: currentSettings.tts.language,
         });
+        console.log("TTS: Stream obtained");
 
         // Convert stream to blob
         const chunks: Uint8Array[] = [];
@@ -55,6 +65,12 @@ export function useTTS() {
           (acc, chunk) => acc + chunk.length,
           0
         );
+        console.log("TTS: Total audio length", totalLength);
+        
+        if (totalLength === 0) {
+          throw new Error("No audio data received from TTS service");
+        }
+
         const combined = new Uint8Array(totalLength);
         let offset = 0;
         for (const chunk of chunks) {
@@ -62,7 +78,29 @@ export function useTTS() {
           offset += chunk.length;
         }
 
-        return new Blob([combined], { type: "audio/mpeg" });
+        // Try different MIME types for better browser compatibility
+        let blob: Blob;
+        try {
+          // First try with audio/mpeg
+          blob = new Blob([combined], { type: "audio/mpeg" });
+          console.log("TTS: Blob created with audio/mpeg", { 
+            size: blob.size, 
+            type: blob.type
+          });
+        } catch (error) {
+          // Fallback to audio/mp3 if audio/mpeg fails
+          console.log("TTS: audio/mpeg failed, trying audio/mp3");
+          blob = new Blob([combined], { type: "audio/mp3" });
+          console.log("TTS: Blob created with audio/mp3", { 
+            size: blob.size, 
+            type: blob.type
+          });
+        }
+        
+        return blob;
+      } catch (error) {
+        console.error("TTS Generation Error:", error);
+        throw error;
       } finally {
         setIsGenerating(false);
       }

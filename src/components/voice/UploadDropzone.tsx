@@ -1,11 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { useRecoilState } from "recoil";
 import { Button } from "@/components/ui/button";
 import {
   IconFileUpload,
-  IconFile,
-  IconX,
-  IconCheck,
 } from "@tabler/icons-react";
 import { conversationState, type ChatMessage } from "@/state/conversation";
 import { settingsState } from "@/state/settings";
@@ -37,8 +34,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
   const [settings] = useRecoilState(settingsState);
   const currentSettings = getCurrentSettings(settings);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { transcribeFile } = useSTT();
 
@@ -67,7 +63,6 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
       return;
     }
 
-    setSelectedFile(file);
     handleUpload(file);
   };
 
@@ -78,7 +73,6 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
 
     // Generate unique conversation session ID for file upload
     const uploadSessionId = `upload_${Date.now()}_${Math.random()
@@ -104,22 +98,8 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
     }));
 
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 10;
-        });
-      }, 200);
-
       // Transcribe file using hook
       const result = await transcribeFile(file);
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
 
       const transcript = result.text;
 
@@ -147,7 +127,6 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
         messages: [...prev.messages, transcriptionMessage],
       }));
 
-      setSelectedFile(null);
       onUploadComplete?.(transcript);
     } catch (error) {
       console.error("Upload Error:", error);
@@ -156,10 +135,8 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
         ...prev,
         messages: prev.messages.filter((msg) => msg.id !== userMessage.id),
       }));
-      setSelectedFile(null);
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -170,15 +147,39 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
     }
   };
 
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      handleFileSelect(file);
     }
-  };
+  }, []);
 
   return (
-    <div className={componentClassName("UploadDropzone", "upload-dropzone")}>
+    <div 
+      className={`${componentClassName("UploadDropzone", "upload-dropzone")} ${isDragOver ? "drag-over" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -191,49 +192,12 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
         variant="outline"
         size="sm"
         onClick={() => fileInputRef.current?.click()}
-        disabled
+        disabled={isUploading}
         className="upload-dropzone__upload-button"
       >
         <IconFileUpload className="upload-dropzone__upload-icon" />
       </Button>
 
-      {selectedFile && (
-        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl px-4 py-3 min-w-0 border border-slate-200 dark:border-slate-600">
-          <IconFile className="h-4 w-4 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">
-              {selectedFile.name}
-            </div>
-            {isUploading && (
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-background rounded-full h-1.5">
-                  <div
-                    className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(uploadProgress)}%
-                </span>
-              </div>
-            )}
-            {!isUploading && uploadProgress === 100 && (
-              <div className="flex items-center gap-1 text-green-600">
-                <IconCheck className="h-3 w-3" />
-                <span className="text-xs">Complete</span>
-              </div>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFile}
-            className="h-6 w-6 p-0"
-          >
-            <IconX className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

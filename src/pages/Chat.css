@@ -52,8 +52,8 @@
 
 .chat-page__upload-dropzone {
   position: absolute;
-  bottom: 1.5rem;
-  right: 4.8rem;
+  bottom: 2.5rem; /* Center alignment - lifted up to align centers */
+  right: 7rem; /* Move further left to avoid overlap */
   z-index: 15; /* Higher than messages but lower than config dialog */
 }
 
