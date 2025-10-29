@@ -573,3 +573,90 @@ div[data-radix-dialog-overlay],
     border: 2px solid #000000;
   }
 }
+
+/* VAD Configuration Styles */
+.config-dialog__vad-config {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.config-dialog__vad-toggle {
+  margin-bottom: 1rem;
+}
+
+.config-dialog__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #000000;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.config-dialog__checkbox:checked {
+  background: #000000;
+  border-color: #000000;
+}
+
+.config-dialog__checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.config-dialog__vad-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.config-dialog__vad-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.config-dialog__vad-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Responsive VAD fields */
+@media (max-width: 768px) {
+  .config-dialog__vad-fields {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

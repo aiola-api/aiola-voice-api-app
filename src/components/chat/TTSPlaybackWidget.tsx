@@ -84,18 +84,18 @@ export function TTSPlaybackWidget({
   const handlePlayPause = async () => {
     if (isPlaying) {
       // Stop current playback
-      if (audioRef.current) {
-        audioRef.current.pause();
+      if (audio.currentAudioElement) {
+        audio.currentAudioElement.pause();
+        audio.currentAudioElement.currentTime = 0;
       }
-      setAudio((prev) => ({ ...prev, playingMessageId: undefined }));
+      setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
       return;
     }
 
     // Stop any other playing audio
-    if (audio.playingMessageId) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+    if (audio.currentAudioElement) {
+      audio.currentAudioElement.pause();
+      audio.currentAudioElement.currentTime = 0;
     }
 
     try {
@@ -122,7 +122,7 @@ export function TTSPlaybackWidget({
       audioElement.volume = volume;
 
       audioElement.addEventListener("ended", () => {
-        setAudio((prev) => ({ ...prev, playingMessageId: undefined }));
+        setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         setCurrentTime(0);
         URL.revokeObjectURL(audioUrl);
       });
@@ -130,11 +130,12 @@ export function TTSPlaybackWidget({
       audioElement.addEventListener("error", (e) => {
         console.error("Audio playback error:", e);
         toast.error("Audio playback failed");
-        setAudio((prev) => ({ ...prev, playingMessageId: undefined }));
+        setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
       });
 
-      setAudio((prev) => ({ ...prev, playingMessageId: messageId }));
+      // Set as current audio element and play
+      setAudio((prev) => ({ ...prev, playingMessageId: messageId, currentAudioElement: audioElement }));
       await audioElement.play();
     } catch (error) {
       console.error("TTS Error:", error);

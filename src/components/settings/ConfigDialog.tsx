@@ -16,6 +16,7 @@ import {
   type TTSVoice,
   type Environment,
   type SettingsState,
+  type VadConfig,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
@@ -124,6 +125,9 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         currentCurrent.stt.rememberFlowid;
       const ttsVoiceChanged =
         originalCurrent.tts.voice !== currentCurrent.tts.voice;
+      const vadConfigChanged =
+        JSON.stringify(originalCurrent.stt.vad) !==
+        JSON.stringify(currentCurrent.stt.vad);
 
       // Log environment-specific tracking for debugging
       if (
@@ -133,7 +137,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         sttKeywordsChanged ||
         workflowIdChanged ||
         rememberFlowidChanged ||
-        ttsVoiceChanged
+        ttsVoiceChanged ||
+        vadConfigChanged
       ) {
         console.log(
           `[checkSettingsChanged] Settings changed detected for ${currentEnvironment} environment:`,
@@ -152,6 +157,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               keywordsChanged: sttKeywordsChanged,
               rememberFlowidChanged: rememberFlowidChanged,
               workflowIdChanged: workflowIdChanged,
+              vadConfigChanged: vadConfigChanged,
             },
             tts: {
               voiceChanged: ttsVoiceChanged,
@@ -264,6 +270,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       toast.error("API Key is required");
       return;
     }
+
 
     // If settings changed and there's an existing connection, reload the page to start fresh
     if (hasSettingsChanged && isConnected) {
@@ -612,10 +619,158 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
 
             <div className="config-dialog__field-group">
               <Label className="config-dialog__label">VAD Config</Label>
-              <div className="config-dialog__info-box">
-                <p className="config-dialog__info-text">
-                  Using SDK defaults (no override available)
-                </p>
+              <div className="config-dialog__vad-config">
+                <div className="config-dialog__vad-toggle">
+                  <label className="config-dialog__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={typeof tempSettings[tempSettings.environment].stt.vad === "object"}
+                      onChange={(e) => {
+                        const currentEnv = tempSettings.environment;
+                        setTempSettings({
+                          ...tempSettings,
+                          [currentEnv]: {
+                            ...tempSettings[currentEnv],
+                            stt: {
+                              ...tempSettings[currentEnv].stt,
+                              vad: e.target.checked 
+                                ? { threshold: 0.5, min_speech_ms: 250, min_silence_ms: 500, max_segment_ms: 30000 }
+                                : "default"
+                            },
+                          },
+                        });
+                      }}
+                      className="config-dialog__checkbox"
+                    />
+                    <span>Use custom VAD configuration</span>
+                  </label>
+                </div>
+                
+                {typeof tempSettings[tempSettings.environment].stt.vad === "object" && (
+                  <div className="config-dialog__vad-fields">
+                    <div className="config-dialog__vad-field">
+                      <Label htmlFor="vad-threshold" className="config-dialog__vad-label">
+                        Threshold (0.0 - 1.0)
+                      </Label>
+                      <Input
+                        id="vad-threshold"
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={tempSettings[tempSettings.environment].stt.vad.threshold || 0.5}
+                        onChange={(e) => {
+                          const currentEnv = tempSettings.environment;
+                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          setTempSettings({
+                            ...tempSettings,
+                            [currentEnv]: {
+                              ...tempSettings[currentEnv],
+                              stt: {
+                                ...tempSettings[currentEnv].stt,
+                                vad: {
+                                  ...vadConfig,
+                                  threshold: parseFloat(e.target.value) || 0.5,
+                                },
+                              },
+                            },
+                          });
+                        }}
+                        className="config-dialog__input"
+                      />
+                    </div>
+                    
+                    <div className="config-dialog__vad-field">
+                      <Label htmlFor="vad-min-speech" className="config-dialog__vad-label">
+                        Min Speech (ms)
+                      </Label>
+                      <Input
+                        id="vad-min-speech"
+                        type="number"
+                        min="0"
+                        value={tempSettings[tempSettings.environment].stt.vad.min_speech_ms || 250}
+                        onChange={(e) => {
+                          const currentEnv = tempSettings.environment;
+                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          setTempSettings({
+                            ...tempSettings,
+                            [currentEnv]: {
+                              ...tempSettings[currentEnv],
+                              stt: {
+                                ...tempSettings[currentEnv].stt,
+                                vad: {
+                                  ...vadConfig,
+                                  min_speech_ms: parseInt(e.target.value) || 250,
+                                },
+                              },
+                            },
+                          });
+                        }}
+                        className="config-dialog__input"
+                      />
+                    </div>
+                    
+                    <div className="config-dialog__vad-field">
+                      <Label htmlFor="vad-min-silence" className="config-dialog__vad-label">
+                        Min Silence (ms)
+                      </Label>
+                      <Input
+                        id="vad-min-silence"
+                        type="number"
+                        min="0"
+                        value={tempSettings[tempSettings.environment].stt.vad.min_silence_ms || 500}
+                        onChange={(e) => {
+                          const currentEnv = tempSettings.environment;
+                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          setTempSettings({
+                            ...tempSettings,
+                            [currentEnv]: {
+                              ...tempSettings[currentEnv],
+                              stt: {
+                                ...tempSettings[currentEnv].stt,
+                                vad: {
+                                  ...vadConfig,
+                                  min_silence_ms: parseInt(e.target.value) || 500,
+                                },
+                              },
+                            },
+                          });
+                        }}
+                        className="config-dialog__input"
+                      />
+                    </div>
+                    
+                    <div className="config-dialog__vad-field">
+                      <Label htmlFor="vad-max-segment" className="config-dialog__vad-label">
+                        Max Segment (ms)
+                      </Label>
+                      <Input
+                        id="vad-max-segment"
+                        type="number"
+                        min="0"
+                        value={tempSettings[tempSettings.environment].stt.vad.max_segment_ms || 30000}
+                        onChange={(e) => {
+                          const currentEnv = tempSettings.environment;
+                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          setTempSettings({
+                            ...tempSettings,
+                            [currentEnv]: {
+                              ...tempSettings[currentEnv],
+                              stt: {
+                                ...tempSettings[currentEnv].stt,
+                                vad: {
+                                  ...vadConfig,
+                                  max_segment_ms: parseInt(e.target.value) || 30000,
+                                },
+                              },
+                            },
+                          });
+                        }}
+                        className="config-dialog__input"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
