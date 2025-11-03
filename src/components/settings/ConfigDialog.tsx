@@ -271,6 +271,31 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       return;
     }
 
+    // Validate custom environment URLs
+    if (currentEnv === "custom") {
+      if (!tempSettings.custom.connection.baseUrl.trim()) {
+        toast.error("Base URL is required for custom environment");
+        return;
+      }
+      if (!tempSettings.custom.connection.authBaseUrl.trim()) {
+        toast.error("Auth URL is required for custom environment");
+        return;
+      }
+      // Basic URL validation
+      try {
+        new URL(tempSettings.custom.connection.baseUrl);
+      } catch {
+        toast.error("Base URL must be a valid URL");
+        return;
+      }
+      try {
+        new URL(tempSettings.custom.connection.authBaseUrl);
+      } catch {
+        toast.error("Auth URL must be a valid URL");
+        return;
+      }
+    }
+
 
     // If settings changed and there's an existing connection, reload the page to start fresh
     if (hasSettingsChanged && isConnected) {
@@ -491,6 +516,11 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               <p className="config-dialog__helper-text">
                 Optional: SDK will use default workflow if empty
               </p>
+              {tempSettings.environment === "custom" && (
+                <p className="config-dialog__helper-text" style={{ marginTop: "0.5rem", fontStyle: "italic" }}>
+                  Note: Default workflowId may not work with custom environments
+                </p>
+              )}
             </div>
 
             <div className="config-dialog__field-group">
@@ -518,11 +548,90 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 >
                   Dev
                 </button>
+                <button
+                  type="button"
+                  onClick={() => switchEnvironment("custom")}
+                  className={`config-dialog__toggle-button ${
+                    tempSettings.environment === "custom"
+                      ? "config-dialog__toggle-button--active"
+                      : ""
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
               <p className="config-dialog__helper-text">
-                Select the API environment: Production or Development
+                Select the API environment: Production, Development, or Custom
               </p>
             </div>
+
+            {tempSettings.environment === "custom" && (
+              <>
+                <div className="config-dialog__field-group">
+                  <Label
+                    htmlFor="custom-base-url"
+                    className="config-dialog__label config-dialog__label--required"
+                  >
+                    Base URL
+                  </Label>
+                  <Input
+                    id="custom-base-url"
+                    type="url"
+                    value={tempSettings.custom.connection.baseUrl}
+                    onChange={(e) => {
+                      const newBaseUrl = e.target.value;
+                      setTempSettings({
+                        ...tempSettings,
+                        custom: {
+                          ...tempSettings.custom,
+                          connection: {
+                            ...tempSettings.custom.connection,
+                            baseUrl: newBaseUrl,
+                          },
+                        },
+                      });
+                    }}
+                    placeholder="https://your-api.example.com"
+                    className="config-dialog__input"
+                  />
+                  <p className="config-dialog__helper-text">
+                    Enter the base URL for your custom API environment
+                  </p>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label
+                    htmlFor="custom-auth-url"
+                    className="config-dialog__label config-dialog__label--required"
+                  >
+                    Auth URL
+                  </Label>
+                  <Input
+                    id="custom-auth-url"
+                    type="url"
+                    value={tempSettings.custom.connection.authBaseUrl}
+                    onChange={(e) => {
+                      const newAuthBaseUrl = e.target.value;
+                      setTempSettings({
+                        ...tempSettings,
+                        custom: {
+                          ...tempSettings.custom,
+                          connection: {
+                            ...tempSettings.custom.connection,
+                            authBaseUrl: newAuthBaseUrl,
+                          },
+                        },
+                      });
+                    }}
+                    placeholder="https://your-auth.example.com"
+                    className="config-dialog__input"
+                  />
+                  <p className="config-dialog__helper-text">
+                    Enter the authentication URL for your custom API environment
+                  </p>
+                </div>
+              </>
+            )}
           </section>
 
           {/* STT Section */}
