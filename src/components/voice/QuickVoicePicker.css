@@ -1,0 +1,134 @@
+/* QuickVoicePicker Component Styles */
+
+.quick-voice-picker {
+  display: flex;
+  align-items: center;
+  min-width: 180px;
+}
+
+.quick-voice-picker__trigger {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 2.5rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  width: 100%;
+}
+
+.quick-voice-picker__trigger:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.quick-voice-picker__trigger:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.quick-voice-picker__content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+
+.quick-voice-picker__label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.quick-voice-picker__current-voice {
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 600;
+  flex: 1;
+  text-align: left;
+}
+
+.quick-voice-picker__chevron {
+  height: 1rem;
+  width: 1rem;
+  color: #64748b;
+  transition: transform 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.quick-voice-picker__trigger[data-state="open"] .quick-voice-picker__chevron {
+  transform: rotate(180deg);
+}
+
+.quick-voice-picker__item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+
+.quick-voice-picker__item:hover {
+  background-color: #f8fafc;
+}
+
+.quick-voice-picker__item[data-highlighted] {
+  background-color: #e2e8f0;
+}
+
+.quick-voice-picker__item-label {
+  display: block;
+  width: 100%;
+  padding-left: 1rem; /* Push text away from checkmark */
+}
+
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .quick-voice-picker__trigger {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .quick-voice-picker__trigger:hover {
+    background-color: #334155;
+    border-color: #475569;
+  }
+
+  .quick-voice-picker__chevron {
+    color: #94a3b8;
+  }
+
+  .quick-voice-picker__label {
+    color: #94a3b8;
+  }
+
+  .quick-voice-picker__current-voice {
+    color: #f1f5f9;
+  }
+
+  .quick-voice-picker__item:hover {
+    background-color: #334155;
+  }
+
+  .quick-voice-picker__item[data-highlighted] {
+    background-color: #475569;
+  }
+
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .quick-voice-picker {
+    min-width: 150px;
+  }
+
+  .quick-voice-picker__label {
+    display: none;
+  }
+
+  .quick-voice-picker__current-voice {
+    font-size: 0.8rem;
+  }
+}

@@ -2,6 +2,7 @@ import { IconTextCaption } from "@tabler/icons-react";
 import { withTimeStamp } from "./withTimeStamp";
 import { componentClassName, formatDuration } from "@/lib/utils";
 import type { ChatMessage } from "@/state/conversation";
+import { TTSPlaybackButton } from "./TTSPlaybackButton";
 import "./chat-messages.css";
 
 interface TranscriptResponseMessageProps {
@@ -36,7 +37,16 @@ function TranscriptResponseMessageBase({
       </div>
 
       {message.content && (
-        <p className="message-content-response">{message.content}</p>
+        <div className="transcript-content-container">
+          <p className="message-content-response">{message.content}</p>
+          <div className="tts-controls">
+            <TTSPlaybackButton
+              messageId={message.id}
+              text={message.content}
+              className="tts-button-response"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

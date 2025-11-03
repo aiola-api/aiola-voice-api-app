@@ -142,6 +142,13 @@
   right: 0rem;
   bottom: 0rem;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-header__voice-picker {
+  margin-right: 0.5rem;
 }
 
 .chat-header__settings-button {

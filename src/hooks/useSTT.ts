@@ -106,6 +106,7 @@ export function useSTT() {
           language: currentSettings.stt.language,
           keywords: currentSettings.stt.keywords,
           workflowId: currentSettings.workflowId,
+          vad: currentSettings.stt.vad,
         };
 
         // Check if we can reuse cached connection
@@ -116,7 +117,9 @@ export function useSTT() {
             JSON.stringify(currentSettingsObj.keywords) ||
           ((streamCache.settings as any).workflowId ||
             (streamCache.settings as any).flowid ||
-            "") !== (currentSettingsObj.workflowId || "");
+            "") !== (currentSettingsObj.workflowId || "") ||
+          JSON.stringify(streamCache.settings.vad) !==
+            JSON.stringify(currentSettingsObj.vad);
 
         console.log("useSTT streamCache", streamCache);
 
@@ -136,6 +139,7 @@ export function useSTT() {
           langCode: string;
           keywords: Record<string, string>;
           workflowId?: string;
+          vadConfig?: any;
         } = {
           langCode: currentSettingsObj.language,
           keywords: keywordsObj,
@@ -144,6 +148,11 @@ export function useSTT() {
         // Add workflowId if present
         if (currentSettingsObj.workflowId) {
           streamRequest.workflowId = currentSettingsObj.workflowId;
+        }
+
+        // Add VAD configuration if present and not default
+        if (currentSettingsObj.vad && currentSettingsObj.vad !== "default") {
+          streamRequest.vadConfig = currentSettingsObj.vad;
         }
 
         // Create stream connection (this does NOT auto-connect)

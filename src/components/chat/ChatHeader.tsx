@@ -14,6 +14,7 @@ import { conversationState } from "@/state/conversation";
 import { audioState } from "@/state/audio";
 import { componentClassName } from "@/lib/utils";
 import { APP_VERSION, AIOLA_SDK_VERSION } from "@/lib/constants";
+import { QuickVoicePicker } from "@/components/voice/QuickVoicePicker";
 import "./ChatHeader.css";
 
 // Helper function to get current environment settings
@@ -177,6 +178,7 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
           </div>
         </div>
         <div className="chat-header__actions">
+          <QuickVoicePicker className="chat-header__voice-picker" />
           <Button
             variant="ghost"
             size="default"

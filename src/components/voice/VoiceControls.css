@@ -50,6 +50,16 @@
   border-color: #fcfdfe !important;
 }
 
+.voice-controls__mic-button.voice-controls__mic-button--ready {
+  border-color: #fcfdfe !important;
+  background-color: #334155 !important;
+}
+
+.voice-controls__mic-button.voice-controls__mic-button--ready:hover {
+  background-color: black !important;
+  border-color: #fcfdfe !important;
+}
+
 .voice-controls__mic-button.voice-controls__mic-button--connecting {
   border-color: #fcfdfe !important;
   background-color: #334155 !important;
@@ -199,7 +209,7 @@
   .voice-controls__mic-button.voice-controls__mic-button--ready {
     border-color: #fcfdfe !important;
     border-width: 3px !important;
-    background-color: white !important;
+    background-color: #334155 !important;
   }
 
   .voice-controls__mic-button.voice-controls__mic-button--ready:hover {

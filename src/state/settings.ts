@@ -1,6 +1,14 @@
 import { atom, useRecoilState, selector } from "recoil";
 import { useEffect } from "react";
 
+// VAD Configuration interface
+export interface VadConfig {
+  threshold?: number;
+  min_speech_ms?: number;
+  min_silence_ms?: number;
+  max_segment_ms?: number;
+}
+
 //TODO get form aiOla SDK
 export type STTLanguageCode =
   | "en_US"
@@ -40,7 +48,7 @@ export interface SettingsState {
     stt: {
       language: STTLanguageCode;
       keywords: string[];
-      vad: "default";
+      vad: "default" | VadConfig;
       rememberFlowid: boolean;
     };
     tts: {
@@ -58,7 +66,7 @@ export interface SettingsState {
     stt: {
       language: STTLanguageCode;
       keywords: string[];
-      vad: "default";
+      vad: "default" | VadConfig;
       rememberFlowid: boolean;
     };
     tts: {
@@ -141,7 +149,7 @@ function loadSettingsFromStorage(): SettingsState {
             stt: {
               language: parsed.stt?.language || "en_US",
               keywords: parsed.stt?.keywords || [],
-              vad: "default",
+              vad: parsed.stt?.vad || "default",
               rememberFlowid: parsed.stt?.rememberFlowid !== false,
             },
             tts: {

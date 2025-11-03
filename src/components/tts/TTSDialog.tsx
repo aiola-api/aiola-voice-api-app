@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRecoilState } from "recoil";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { settingsState, type TTSVoice } from "@/state/settings";
+import { audioState } from "@/state/audio";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
@@ -47,15 +48,29 @@ interface TTSDialogProps {
 
 export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
   const [settings] = useRecoilState(settingsState);
+  const [audio, setAudio] = useRecoilState(audioState);
   const currentSettings = getCurrentSettings(settings);
   const [text, setText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState<TTSVoice>(
     currentSettings.tts.voice
   );
-  const [isPlaying, setIsPlaying] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const audioRef = useState<HTMLAudioElement | null>(null)[0];
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { generateTTS, isGenerating } = useTTS();
+  
+  // Use a unique ID for this dialog's audio playback
+  const dialogId = "tts-dialog";
+  const isPlaying = audio.playingMessageId === dialogId;
+
+  // Cleanup audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -88,55 +103,57 @@ export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
 
     if (isPlaying) {
       // Stop current playback
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
+      if (audio.currentAudioElement) {
+        audio.currentAudioElement.pause();
+        audio.currentAudioElement.currentTime = 0;
       }
-      setIsPlaying(false);
+      setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
       return;
     }
 
     try {
       // Stop any other playing audio
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
+      if (audio.currentAudioElement) {
+        audio.currentAudioElement.pause();
+        audio.currentAudioElement.currentTime = 0;
       }
 
       // Create audio element and play
       const audioUrl = URL.createObjectURL(audioBlob);
       const audioElement = new Audio(audioUrl);
+      audioRef.current = audioElement;
 
       audioElement.addEventListener("ended", () => {
-        setIsPlaying(false);
+        setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
       });
 
       audioElement.addEventListener("error", (e) => {
         console.error("Audio playback error:", e);
         toast.error("Audio playback failed");
-        setIsPlaying(false);
+        setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
       });
 
-      setIsPlaying(true);
+      // Set as current audio element and play
+      setAudio((prev) => ({ ...prev, playingMessageId: dialogId, currentAudioElement: audioElement }));
       await audioElement.play();
     } catch (error) {
       console.error("Audio Playback Error:", error);
       toast.error("Audio playback failed");
-      setIsPlaying(false);
+      setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
     }
   };
 
   const handleClose = () => {
     // Stop any playing audio
-    if (audioRef && isPlaying) {
-      audioRef.pause();
-      audioRef.currentTime = 0;
+    if (audio.currentAudioElement) {
+      audio.currentAudioElement.pause();
+      audio.currentAudioElement.currentTime = 0;
     }
+    setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
     setText("");
     setAudioBlob(null);
-    setIsPlaying(false);
     onOpenChange(false);
   };
 

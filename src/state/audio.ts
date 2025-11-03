@@ -31,6 +31,7 @@ export interface AudioState {
   currentSessionId?: string;
   cancelFunction?: () => void;
   cancelChatFunction?: () => void;
+  currentAudioElement?: HTMLAudioElement | null;
 }
 
 export const audioState = atom<AudioState>({
@@ -50,5 +51,6 @@ export const audioState = atom<AudioState>({
     currentSessionId: undefined,
     cancelFunction: undefined,
     cancelChatFunction: undefined,
+    currentAudioElement: null,
   },
 });

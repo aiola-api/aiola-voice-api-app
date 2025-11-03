@@ -123,7 +123,8 @@ export function VoiceControls() {
   const computedMicrophoneState = (() => {
     if (audio.isRecording) return "connected";
     if (preparingMic) return "preparingMic";
-    if (isConnecting || testConnecting) return "connecting";
+    // Only show connecting state for microphone-specific operations, not general connection state
+    if (testConnecting) return "connecting";
     if (isOnline && sessionId) return "ready";
     return "idle";
   })();
