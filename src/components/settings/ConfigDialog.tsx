@@ -767,7 +767,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         min="0"
                         max="1"
                         step="0.1"
-                        value={tempSettings[tempSettings.environment].stt.vad.threshold || 0.5}
+                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).threshold || 0.5}
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
                           const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
@@ -797,7 +797,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         id="vad-min-speech"
                         type="number"
                         min="0"
-                        value={tempSettings[tempSettings.environment].stt.vad.min_speech_ms || 250}
+                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).min_speech_ms || 250}
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
                           const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
@@ -827,7 +827,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         id="vad-min-silence"
                         type="number"
                         min="0"
-                        value={tempSettings[tempSettings.environment].stt.vad.min_silence_ms || 500}
+                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).min_silence_ms || 500}
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
                           const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
@@ -857,7 +857,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         id="vad-max-segment"
                         type="number"
                         min="0"
-                        value={tempSettings[tempSettings.environment].stt.vad.max_segment_ms || 30000}
+                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).max_segment_ms || 30000}
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
                           const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
