@@ -34,7 +34,7 @@ export type TTSVoice =
   | "julia"
   | "leah";
 
-export type Environment = "prod" | "dev";
+export type Environment = "prod" | "dev" | "custom";
 
 export interface SettingsState {
   environment: Environment;
@@ -57,6 +57,24 @@ export interface SettingsState {
     };
   };
   dev: {
+    connection: {
+      apiKey: string;
+      baseUrl: string;
+      authBaseUrl: string;
+      workflowId?: string;
+    };
+    stt: {
+      language: STTLanguageCode;
+      keywords: string[];
+      vad: "default" | VadConfig;
+      rememberFlowid: boolean;
+    };
+    tts: {
+      voice: TTSVoice;
+      language: "en";
+    };
+  };
+  custom: {
     connection: {
       apiKey: string;
       baseUrl: string;
@@ -102,6 +120,24 @@ const defaultSettings: SettingsState = {
       apiKey: "",
       baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
       authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+      workflowId: "",
+    },
+    stt: {
+      language: "en_US",
+      keywords: [],
+      vad: "default",
+      rememberFlowid: true,
+    },
+    tts: {
+      voice: "tara",
+      language: "en",
+    },
+  },
+  custom: {
+    connection: {
+      apiKey: "",
+      baseUrl: "",
+      authBaseUrl: "",
       workflowId: "",
     },
     stt: {
@@ -162,6 +198,24 @@ function loadSettingsFromStorage(): SettingsState {
               apiKey: "", // Dev API key starts empty
               baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
               authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+              workflowId: "",
+            },
+            stt: {
+              language: "en_US",
+              keywords: [],
+              vad: "default",
+              rememberFlowid: true,
+            },
+            tts: {
+              voice: "tara",
+              language: "en",
+            },
+          },
+          custom: {
+            connection: {
+              apiKey: "",
+              baseUrl: "",
+              authBaseUrl: "",
               workflowId: "",
             },
             stt: {
@@ -273,6 +327,14 @@ function loadSettingsFromStorage(): SettingsState {
           connection: {
             ...defaultSettings.dev.connection,
             ...(parsed.dev?.connection || {}),
+          },
+        },
+        custom: {
+          ...defaultSettings.custom,
+          ...(parsed.custom || {}),
+          connection: {
+            ...defaultSettings.custom.connection,
+            ...(parsed.custom?.connection || {}),
           },
         },
       };

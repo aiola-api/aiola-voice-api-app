@@ -1,6 +1,6 @@
 import { useRecoilValue } from "recoil";
 import { type StreamConnection } from "@/state/connection";
-import { settingsState } from "@/state/settings";
+import { settingsState, type VadConfig } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback } from "react";
 
@@ -28,6 +28,7 @@ let streamCache: {
     language: string;
     keywords: string[];
     flowid?: string;
+    vad?: "default" | VadConfig;
   };
 } | null = null;
 
