@@ -1,7 +1,11 @@
 import { useRecoilState, useRecoilValue } from "recoil";
 import { AiolaClient } from "@aiola/sdk";
 import { connectionState, type ConnectionState } from "@/state/connection";
-import { settingsState, type Environment } from "@/state/settings";
+import {
+  settingsState,
+  type Environment,
+  type SettingsState,
+} from "@/state/settings";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -35,7 +39,7 @@ let lastNotifiedError: string | undefined = undefined;
 /**
  * Get current environment settings
  */
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   console.log("getCurrentSettings", { env, settings });
   return {
@@ -176,12 +180,12 @@ export function useConnection() {
           console.log("useConnection creating new access token", {
             apiKey,
             authBaseUrl,
-            workflowId: environment === "dev" ? workflowId : undefined,
+            workflowId: workflowId || undefined,
           });
           const { accessToken } = await AiolaClient.grantToken({
             apiKey,
             authBaseUrl,
-            workflowId: environment === "dev" ? workflowId : undefined,
+            workflowId: workflowId || undefined,
           });
 
           // Create new client
@@ -189,7 +193,7 @@ export function useConnection() {
             accessToken,
             baseUrl,
             authBaseUrl,
-            workflowId: environment === "dev" ? workflowId : null,
+            workflowId: workflowId || undefined,
           });
 
           // Use access token as session ID (this is what the user means by "session")
