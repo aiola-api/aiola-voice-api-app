@@ -430,6 +430,9 @@ div[data-radix-dialog-overlay],
 .config-dialog__button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: #9ca3af !important;
+  border-color: #9ca3af !important;
+  color: white !important;
 }
 
 /* Responsive Design

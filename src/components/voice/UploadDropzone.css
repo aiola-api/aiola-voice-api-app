@@ -36,7 +36,7 @@
 .upload-dropzone__upload-icon {
   height: 1.25rem;
   width: 1.25rem;
-  color: #64748b;
+  color: white;
 }
 
 .upload-dropzone__file-preview {
@@ -135,17 +135,12 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .upload-dropzone__upload-button {
-    border-color: #475569;
+    border-color: #fcfdfe !important;
     background-color: #334155;
   }
 
   .upload-dropzone__upload-button:hover {
-    background-color: #475569;
-    cursor: pointer;
-  }
-
-  .upload-dropzone__upload-icon {
-    color: #cbd5e1;
+  background-color: black !important;
     cursor: pointer;
   }
 
