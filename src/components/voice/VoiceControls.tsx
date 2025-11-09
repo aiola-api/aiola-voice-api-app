@@ -205,6 +205,10 @@ export function VoiceControls() {
   // Track which connections we've already set up handlers for
   const connectionHandlersRef = useRef<Set<StreamConnection>>(new Set());
 
+  // Track last applied keywords and schema values to avoid unnecessary updates
+  const lastAppliedKeywordsRef = useRef<string>("");
+  const lastAppliedSchemaValuesRef = useRef<string>("");
+
   // Timer effect for both recording and STT request
   useEffect(() => {
     if (sttRequestStartTimeRef.current === 0 || !audio.isRecording) return;
@@ -273,6 +277,59 @@ export function VoiceControls() {
     setConversation,
     sttRequestStartTimeRef,
   ]);
+
+  // Dynamically update keywords and schema values when settings change during active stream
+  useEffect(() => {
+    const connection = connectionRef.current;
+    if (!connection || !connection.connected) {
+      return;
+    }
+
+    // Get current values from settings (use direct access to avoid dependency issues)
+    const env = settings.environment;
+    const keywords = settings[env].stt.keywords || [];
+    const schemaValues = settings[env].stt.schemaValues || {};
+
+    // Check if keywords changed
+    const currentKeywordsJson = JSON.stringify(keywords);
+    if (currentKeywordsJson !== lastAppliedKeywordsRef.current) {
+      const keywordsObj: Record<string, string> = {};
+      keywords.forEach((keyword: string) => {
+        keywordsObj[keyword] = keyword;
+      });
+      console.log("🔑 Updating keywords dynamically:", keywordsObj);
+      try {
+        connection.setKeywords(keywordsObj);
+        // Update ref immediately to prevent duplicate calls
+        lastAppliedKeywordsRef.current = currentKeywordsJson;
+      } catch (error) {
+        console.error("❌ Error updating keywords:", error);
+      }
+    }
+
+    // Check if schema values changed
+    const currentSchemaValuesJson = JSON.stringify(schemaValues);
+    if (currentSchemaValuesJson !== lastAppliedSchemaValuesRef.current) {
+      console.log("📋 Updating schema values dynamically:", schemaValues);
+      try {
+        // Update ref immediately before async call to prevent duplicate calls
+        lastAppliedSchemaValuesRef.current = currentSchemaValuesJson;
+        connection.setSchemaValues(schemaValues, (response) => {
+          if (response.status === "ok") {
+            console.log("✅ Schema values updated successfully");
+          } else {
+            console.warn("⚠️ Schema values update warning:", response.message);
+            // Revert ref on error so it can be retried
+            lastAppliedSchemaValuesRef.current = "";
+          }
+        });
+      } catch (error) {
+        console.error("❌ Error updating schema values:", error);
+        // Revert ref on error so it can be retried
+        lastAppliedSchemaValuesRef.current = "";
+      }
+    }
+  }, [settings]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -612,6 +669,28 @@ export function VoiceControls() {
           toast.success("Connected - Recording started");
 
           try {
+            // Apply keywords (always set, even if empty to clear any previous values)
+            const keywords = currentSettings.stt.keywords || [];
+            const keywordsObj: Record<string, string> = {};
+            keywords.forEach((keyword: string) => {
+              keywordsObj[keyword] = keyword;
+            });
+            console.log("🔑 Applying keywords:", keywordsObj);
+            connection.setKeywords(keywordsObj);
+            lastAppliedKeywordsRef.current = JSON.stringify(keywords);
+
+            // Apply schema values (always set, even if empty to clear any previous values)
+            const schemaValues = currentSettings.stt.schemaValues || {};
+            console.log("📋 Applying schema values:", schemaValues);
+            connection.setSchemaValues(schemaValues, (response) => {
+              if (response.status === "ok") {
+                console.log("✅ Schema values set successfully");
+              } else {
+                console.warn("⚠️ Schema values set with warning:", response.message);
+              }
+            });
+            lastAppliedSchemaValuesRef.current = JSON.stringify(schemaValues);
+
             await setupAudioPipeline(connection);
           } catch (error) {
             console.error("❌ Error in connect handler:", error);
@@ -1153,6 +1232,9 @@ export function VoiceControls() {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         connection.on("disconnect", (reason: any) => {
+          // Reset applied refs when connection disconnects
+          lastAppliedKeywordsRef.current = "";
+          lastAppliedSchemaValuesRef.current = "";
           console.log("🔌 Disconnected:", reason);
           if (reason && reason !== "io client disconnect") {
             toast.error(`Disconnected: ${reason}`);

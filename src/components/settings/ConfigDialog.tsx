@@ -17,6 +17,7 @@ import {
   type Environment,
   type SettingsState,
   type VadConfig,
+  type SchemaValues,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
@@ -100,6 +101,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   const [tempSettings, setTempSettings] = useState(settings);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [hasSettingsChanged, setHasSettingsChanged] = useState(false);
+  const [schemaValuesError, setSchemaValuesError] = useState<string | null>(null);
   const { createSession, isConnected } = useConnection();
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +120,9 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       const sttKeywordsChanged =
         JSON.stringify(originalCurrent.stt.keywords) !==
         JSON.stringify(currentCurrent.stt.keywords);
+      const sttSchemaValuesChanged =
+        JSON.stringify(originalCurrent.stt.schemaValues) !==
+        JSON.stringify(currentCurrent.stt.schemaValues);
       const workflowIdChanged =
         originalCurrent.workflowId !== currentCurrent.workflowId;
       const rememberFlowidChanged =
@@ -155,6 +160,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             stt: {
               languageChanged: sttLanguageChanged,
               keywordsChanged: sttKeywordsChanged,
+              schemaValuesChanged: sttSchemaValuesChanged,
               rememberFlowidChanged: rememberFlowidChanged,
               workflowIdChanged: workflowIdChanged,
               vadConfigChanged: vadConfigChanged,
@@ -171,6 +177,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         environmentChanged ||
         sttLanguageChanged ||
         sttKeywordsChanged ||
+        sttSchemaValuesChanged ||
         workflowIdChanged ||
         rememberFlowidChanged ||
         ttsVoiceChanged
@@ -723,6 +730,105 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               />
               <p className="config-dialog__helper-text">
                 Comma-separated keywords to improve recognition accuracy
+              </p>
+            </div>
+
+            <div className="config-dialog__field-group">
+              <Label htmlFor="schema-values" className="config-dialog__label">
+                Schema Values
+              </Label>
+              <Textarea
+                id="schema-values"
+                value={JSON.stringify(
+                  tempSettings[tempSettings.environment].stt.schemaValues,
+                  null,
+                  2
+                )}
+                onChange={(e) => {
+                  const jsonText = e.target.value.trim();
+                  const currentEnv = tempSettings.environment;
+
+                  // Allow empty string (treated as empty object)
+                  if (jsonText === "") {
+                    setSchemaValuesError(null);
+                    setTempSettings({
+                      ...tempSettings,
+                      [currentEnv]: {
+                        ...tempSettings[currentEnv],
+                        stt: {
+                          ...tempSettings[currentEnv].stt,
+                          schemaValues: {},
+                        },
+                      },
+                    });
+                    return;
+                  }
+
+                  // Try to parse JSON
+                  try {
+                    const parsed = JSON.parse(jsonText);
+
+                    // Validate structure matches SchemaValues type
+                    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+                      setSchemaValuesError("Schema values must be an object");
+                      return;
+                    }
+
+                    // Validate each value is an array of strings or numbers
+                    for (const [key, value] of Object.entries(parsed)) {
+                      if (!Array.isArray(value)) {
+                        setSchemaValuesError(
+                          `Value for "${key}" must be an array`
+                        );
+                        return;
+                      }
+                      for (const item of value) {
+                        if (typeof item !== "string" && typeof item !== "number") {
+                          setSchemaValuesError(
+                            `Items in "${key}" array must be strings or numbers`
+                          );
+                          return;
+                        }
+                      }
+                    }
+
+                    // Valid schema values
+                    setSchemaValuesError(null);
+                    console.log("[ConfigDialog] STT schema values changed:", {
+                      from: tempSettings[currentEnv].stt.schemaValues,
+                      to: parsed,
+                    });
+                    setTempSettings({
+                      ...tempSettings,
+                      [currentEnv]: {
+                        ...tempSettings[currentEnv],
+                        stt: {
+                          ...tempSettings[currentEnv].stt,
+                          schemaValues: parsed as SchemaValues,
+                        },
+                      },
+                    });
+                  } catch (error) {
+                    // Invalid JSON
+                    setSchemaValuesError(
+                      error instanceof Error
+                        ? `Invalid JSON: ${error.message}`
+                        : "Invalid JSON format"
+                    );
+                  }
+                }}
+                placeholder='{"contact.name": ["John Doe", "Jane Smith"], "contact.email": ["john@example.com"]}'
+                rows={6}
+                className={`config-dialog__textarea ${
+                  schemaValuesError ? "config-dialog__textarea--error" : ""
+                }`}
+              />
+              {schemaValuesError && (
+                <p className="config-dialog__error-text">{schemaValuesError}</p>
+              )}
+              <p className="config-dialog__helper-text">
+                JSON object with dot-notation keys mapping to arrays of strings or numbers. Supports copy/paste.
+                Example: {"{"}"contact.name": ["John Doe", "Jane Smith"]{"}"}
               </p>
             </div>
 
