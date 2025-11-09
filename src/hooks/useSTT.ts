@@ -1,6 +1,6 @@
 import { useRecoilValue } from "recoil";
 import { type StreamConnection } from "@/state/connection";
-import { settingsState, type VadConfig } from "@/state/settings";
+import { settingsState, type VadConfig, type SchemaValues } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback } from "react";
 
@@ -29,6 +29,7 @@ let streamCache: {
     keywords: string[];
     flowid?: string;
     vad?: "default" | VadConfig;
+    schemaValues: SchemaValues;
   };
 } | null = null;
 
@@ -108,6 +109,7 @@ export function useSTT() {
           keywords: currentSettings.stt.keywords,
           workflowId: currentSettings.workflowId,
           vad: currentSettings.stt.vad,
+          schemaValues: currentSettings.stt.schemaValues,
         };
 
         // Check if we can reuse cached connection
@@ -120,7 +122,9 @@ export function useSTT() {
             (streamCache.settings as any).flowid ||
             "") !== (currentSettingsObj.workflowId || "") ||
           JSON.stringify(streamCache.settings.vad) !==
-            JSON.stringify(currentSettingsObj.vad);
+            JSON.stringify(currentSettingsObj.vad) ||
+          JSON.stringify(streamCache.settings.schemaValues) !==
+            JSON.stringify(currentSettingsObj.schemaValues);
 
         console.log("useSTT streamCache", streamCache);
 

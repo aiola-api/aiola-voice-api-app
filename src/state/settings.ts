@@ -9,6 +9,9 @@ export interface VadConfig {
   max_segment_ms?: number;
 }
 
+// Schema Values interface - matches SDK SchemaValues type
+export type SchemaValues = Record<string, (string | number)[]>;
+
 //TODO get form aiOla SDK
 export type STTLanguageCode =
   | "en_US"
@@ -50,6 +53,7 @@ export interface SettingsState {
       keywords: string[];
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
+      schemaValues: SchemaValues;
     };
     tts: {
       voice: TTSVoice;
@@ -68,6 +72,7 @@ export interface SettingsState {
       keywords: string[];
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
+      schemaValues: SchemaValues;
     };
     tts: {
       voice: TTSVoice;
@@ -86,6 +91,7 @@ export interface SettingsState {
       keywords: string[];
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
+      schemaValues: SchemaValues;
     };
     tts: {
       voice: TTSVoice;
@@ -109,6 +115,7 @@ const defaultSettings: SettingsState = {
       keywords: [],
       vad: "default",
       rememberFlowid: true,
+      schemaValues: {},
     },
     tts: {
       voice: "tara",
@@ -127,6 +134,7 @@ const defaultSettings: SettingsState = {
       keywords: [],
       vad: "default",
       rememberFlowid: true,
+      schemaValues: {},
     },
     tts: {
       voice: "tara",
@@ -145,6 +153,7 @@ const defaultSettings: SettingsState = {
       keywords: [],
       vad: "default",
       rememberFlowid: true,
+      schemaValues: {},
     },
     tts: {
       voice: "tara",
@@ -187,6 +196,7 @@ function loadSettingsFromStorage(): SettingsState {
               keywords: parsed.stt?.keywords || [],
               vad: parsed.stt?.vad || "default",
               rememberFlowid: parsed.stt?.rememberFlowid !== false,
+              schemaValues: parsed.stt?.schemaValues || {},
             },
             tts: {
               voice: parsed.tts?.voice || "tara",
@@ -205,6 +215,7 @@ function loadSettingsFromStorage(): SettingsState {
               keywords: [],
               vad: "default",
               rememberFlowid: true,
+              schemaValues: {},
             },
             tts: {
               voice: "tara",
@@ -223,6 +234,7 @@ function loadSettingsFromStorage(): SettingsState {
               keywords: [],
               vad: "default",
               rememberFlowid: true,
+              schemaValues: {},
             },
             tts: {
               voice: "tara",
@@ -320,6 +332,11 @@ function loadSettingsFromStorage(): SettingsState {
             ...defaultSettings.prod.connection,
             ...(parsed.prod?.connection || {}),
           },
+          stt: {
+            ...defaultSettings.prod.stt,
+            ...(parsed.prod?.stt || {}),
+            schemaValues: parsed.prod?.stt?.schemaValues || {},
+          },
         },
         dev: {
           ...defaultSettings.dev,
@@ -328,6 +345,11 @@ function loadSettingsFromStorage(): SettingsState {
             ...defaultSettings.dev.connection,
             ...(parsed.dev?.connection || {}),
           },
+          stt: {
+            ...defaultSettings.dev.stt,
+            ...(parsed.dev?.stt || {}),
+            schemaValues: parsed.dev?.stt?.schemaValues || {},
+          },
         },
         custom: {
           ...defaultSettings.custom,
@@ -335,6 +357,11 @@ function loadSettingsFromStorage(): SettingsState {
           connection: {
             ...defaultSettings.custom.connection,
             ...(parsed.custom?.connection || {}),
+          },
+          stt: {
+            ...defaultSettings.custom.stt,
+            ...(parsed.custom?.stt || {}),
+            schemaValues: parsed.custom?.stt?.schemaValues || {},
           },
         },
       };

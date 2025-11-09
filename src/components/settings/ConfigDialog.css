@@ -337,6 +337,19 @@ div[data-radix-dialog-overlay],
     "Courier New", monospace;
 }
 
+.config-dialog__textarea--error {
+  border-color: #ef4444;
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.config-dialog__error-text {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.25rem;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
 .config-dialog__info-box {
   background: white;
   border: 2px solid #000000;
@@ -417,6 +430,9 @@ div[data-radix-dialog-overlay],
 .config-dialog__button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: #9ca3af !important;
+  border-color: #9ca3af !important;
+  color: white !important;
 }
 
 /* Responsive Design

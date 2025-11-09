@@ -1,12 +1,20 @@
 import { atom } from "recoil";
+import type { SchemaValues, SetSchemaValuesResponse } from "@aiola/sdk";
 
 // Type for the streaming connection
+// Matches the SDK StreamingClient interface
 export interface StreamConnection {
   on: (event: string, callback: (...args: unknown[]) => void) => void;
   connect: () => void;
   disconnect: () => void;
   send: (data: ArrayBuffer) => void;
   connected?: boolean;
+  // SDK methods for dynamic updates
+  setKeywords: (keywords: Record<string, string>) => void;
+  setSchemaValues: (
+    schemaValues: SchemaValues,
+    callback?: (response: SetSchemaValuesResponse) => void
+  ) => void;
 }
 
 // Connection state - only stores metadata, not the actual SDK client

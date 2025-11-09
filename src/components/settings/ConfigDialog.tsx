@@ -17,8 +17,10 @@ import {
   type Environment,
   type SettingsState,
   type VadConfig,
+  type SchemaValues,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
+import { useSTT } from "@/hooks/useSTT";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
 import "./ConfigDialog.css";
@@ -100,8 +102,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   const [tempSettings, setTempSettings] = useState(settings);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [hasSettingsChanged, setHasSettingsChanged] = useState(false);
+  const [schemaValuesError, setSchemaValuesError] = useState<string | null>(
+    null
+  );
+  const [isSettingSchemaValues, setIsSettingSchemaValues] = useState(false);
+  const [schemaValuesRawText, setSchemaValuesRawText] = useState<string>("");
   const { createSession, isConnected } = useConnection();
+  const { createStreamConnection } = useSTT();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const schemaValuesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Function to check if settings have changed
   const checkSettingsChanged = useCallback(
@@ -118,6 +127,9 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       const sttKeywordsChanged =
         JSON.stringify(originalCurrent.stt.keywords) !==
         JSON.stringify(currentCurrent.stt.keywords);
+      const sttSchemaValuesChanged =
+        JSON.stringify(originalCurrent.stt.schemaValues) !==
+        JSON.stringify(currentCurrent.stt.schemaValues);
       const workflowIdChanged =
         originalCurrent.workflowId !== currentCurrent.workflowId;
       const rememberFlowidChanged =
@@ -155,6 +167,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             stt: {
               languageChanged: sttLanguageChanged,
               keywordsChanged: sttKeywordsChanged,
+              schemaValuesChanged: sttSchemaValuesChanged,
               rememberFlowidChanged: rememberFlowidChanged,
               workflowIdChanged: workflowIdChanged,
               vadConfigChanged: vadConfigChanged,
@@ -171,6 +184,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         environmentChanged ||
         sttLanguageChanged ||
         sttKeywordsChanged ||
+        sttSchemaValuesChanged ||
         workflowIdChanged ||
         rememberFlowidChanged ||
         ttsVoiceChanged
@@ -215,6 +229,18 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
     if (open) {
       setTempSettings(settings);
       setHasSettingsChanged(false);
+      // Initialize raw text with current schema values
+      const currentEnv = settings.environment;
+      const schemaValues = settings[currentEnv].stt.schemaValues;
+      // If schema values is empty object, show empty string instead of {}
+      if (Object.keys(schemaValues).length === 0) {
+        setSchemaValuesRawText("");
+      } else {
+        setSchemaValuesRawText(
+          JSON.stringify(schemaValues, null, 2)
+        );
+      }
+      setSchemaValuesError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]); // Only depend on 'open', not 'settings'
@@ -295,7 +321,6 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         return;
       }
     }
-
 
     // If settings changed and there's an existing connection, reload the page to start fresh
     if (hasSettingsChanged && isConnected) {
@@ -379,6 +404,146 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       onOpenChange(false);
     } finally {
       setIsTestingConnection(false);
+    }
+  };
+
+  // Validation function for schema values
+  const validateSchemaValues = useCallback(
+    (
+      jsonText: string
+    ): { isValid: boolean; error: string | null; parsed?: SchemaValues } => {
+      const trimmed = jsonText.trim();
+
+      // Allow empty string (treated as empty object)
+      if (trimmed === "") {
+        return { isValid: true, error: null, parsed: {} };
+      }
+
+      // Try to parse JSON
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        // Validate structure matches SchemaValues type
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed)
+        ) {
+          return {
+            isValid: false,
+            error: "Schema values must be an object",
+          };
+        }
+
+        // Validate each value is an array of strings or numbers
+        for (const [key, value] of Object.entries(parsed)) {
+          if (!Array.isArray(value)) {
+            return {
+              isValid: false,
+              error: `Value for "${key}" must be an array`,
+            };
+          }
+          for (const item of value) {
+            if (typeof item !== "string" && typeof item !== "number") {
+              return {
+                isValid: false,
+                error: `Items in "${key}" array must be strings or numbers`,
+              };
+            }
+          }
+        }
+
+        // Valid schema values
+        return { isValid: true, error: null, parsed: parsed as SchemaValues };
+      } catch (error) {
+        // Invalid JSON
+        return {
+          isValid: false,
+          error:
+            error instanceof Error
+              ? `Invalid JSON: ${error.message}`
+              : "Invalid JSON format",
+        };
+      }
+    },
+    []
+  );
+
+  const handleSetSchemaValues = async () => {
+    // Get current raw text value
+    const jsonText = schemaValuesRawText;
+
+    // Validate the current value
+    const validation = validateSchemaValues(jsonText);
+
+    if (!validation.isValid) {
+      // Set and display the error
+      setSchemaValuesError(validation.error);
+
+      // Scroll to the error
+      const textarea = schemaValuesTextareaRef.current;
+      if (textarea) {
+        textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+        textarea.focus();
+      }
+
+      // Show toast with error
+      toast.error(`Schema values validation failed: ${validation.error}`);
+      return;
+    }
+
+    // Clear any previous errors
+    setSchemaValuesError(null);
+
+    // Update tempSettings with validated values
+    const currentEnv = tempSettings.environment;
+    setTempSettings({
+      ...tempSettings,
+      [currentEnv]: {
+        ...tempSettings[currentEnv],
+        stt: {
+          ...tempSettings[currentEnv].stt,
+          schemaValues: validation.parsed || {},
+        },
+      },
+    });
+
+    // Check if connected
+    if (!isConnected) {
+      toast.error("Please connect first before setting schema values");
+      return;
+    }
+
+    setIsSettingSchemaValues(true);
+
+    try {
+      // Create or get stream connection
+      const connection = await createStreamConnection();
+
+      // Set schema values (use validated parsed value)
+      const schemaValues = validation.parsed || {};
+      connection.setSchemaValues(schemaValues, (response) => {
+        if (response.status === "ok") {
+          toast.success("Schema values set successfully");
+          console.log("✅ Schema values set successfully:", schemaValues);
+        } else {
+          toast.warning(
+            `Schema values set with warning: ${
+              response.message || "Unknown warning"
+            }`
+          );
+          console.warn("⚠️ Schema values set with warning:", response.message);
+        }
+        setIsSettingSchemaValues(false);
+      });
+    } catch (error) {
+      console.error("❌ Error setting schema values:", error);
+      toast.error(
+        `Failed to set schema values: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+      setIsSettingSchemaValues(false);
     }
   };
 
@@ -517,7 +682,10 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 Optional: SDK will use default workflow if empty
               </p>
               {tempSettings.environment === "custom" && (
-                <p className="config-dialog__helper-text" style={{ marginTop: "0.5rem", fontStyle: "italic" }}>
+                <p
+                  className="config-dialog__helper-text"
+                  style={{ marginTop: "0.5rem", fontStyle: "italic" }}
+                >
                   Note: Default workflowId may not work with custom environments
                 </p>
               )}
@@ -727,13 +895,58 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
             </div>
 
             <div className="config-dialog__field-group">
+              <Label htmlFor="schema-values" className="config-dialog__label">
+                Schema Values
+              </Label>
+              <Textarea
+                ref={schemaValuesTextareaRef}
+                id="schema-values"
+                value={schemaValuesRawText}
+                onChange={(e) => {
+                  // Just update the raw text - no validation while typing
+                  setSchemaValuesRawText(e.target.value);
+                  // Clear any existing errors when user starts typing
+                  if (schemaValuesError) {
+                    setSchemaValuesError(null);
+                  }
+                }}
+                placeholder='{"contact.name": ["John Doe", "Jane Smith"], "contact.email": ["john@example.com"]}'
+                rows={6}
+                className={`config-dialog__textarea ${
+                  schemaValuesError ? "config-dialog__textarea--error" : ""
+                }`}
+              />
+              {schemaValuesError ? (
+                <p className="config-dialog__error-text">{schemaValuesError}</p>
+              ) : (
+                <p className="config-dialog__helper-text">
+                  JSON object with dot-notation keys mapping to arrays of
+                  strings or numbers. Supports copy/paste. Example: {"{"}
+                  "contact.name": ["John Doe", "Jane Smith"]{"}"}
+                </p>
+              )}
+              <div style={{ marginTop: "0.75rem" }}>
+                <Button
+                  onClick={handleSetSchemaValues}
+                  disabled={isSettingSchemaValues || !isConnected}
+                  className="config-dialog__button config-dialog__button--primary"
+                >
+                  {isSettingSchemaValues ? "Setting..." : "Set Schema Values"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="config-dialog__field-group">
               <Label className="config-dialog__label">VAD Config</Label>
               <div className="config-dialog__vad-config">
                 <div className="config-dialog__vad-toggle">
                   <label className="config-dialog__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={typeof tempSettings[tempSettings.environment].stt.vad === "object"}
+                      checked={
+                        typeof tempSettings[tempSettings.environment].stt
+                          .vad === "object"
+                      }
                       onChange={(e) => {
                         const currentEnv = tempSettings.environment;
                         setTempSettings({
@@ -742,9 +955,14 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                             ...tempSettings[currentEnv],
                             stt: {
                               ...tempSettings[currentEnv].stt,
-                              vad: e.target.checked 
-                                ? { threshold: 0.5, min_speech_ms: 250, min_silence_ms: 500, max_segment_ms: 30000 }
-                                : "default"
+                              vad: e.target.checked
+                                ? {
+                                    threshold: 0.5,
+                                    min_speech_ms: 250,
+                                    min_silence_ms: 500,
+                                    max_segment_ms: 30000,
+                                  }
+                                : "default",
                             },
                           },
                         });
@@ -754,11 +972,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                     <span>Use custom VAD configuration</span>
                   </label>
                 </div>
-                
-                {typeof tempSettings[tempSettings.environment].stt.vad === "object" && (
+
+                {typeof tempSettings[tempSettings.environment].stt.vad ===
+                  "object" && (
                   <div className="config-dialog__vad-fields">
                     <div className="config-dialog__vad-field">
-                      <Label htmlFor="vad-threshold" className="config-dialog__vad-label">
+                      <Label
+                        htmlFor="vad-threshold"
+                        className="config-dialog__vad-label"
+                      >
                         Threshold (0.0 - 1.0)
                       </Label>
                       <Input
@@ -767,10 +989,16 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         min="0"
                         max="1"
                         step="0.1"
-                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).threshold || 0.5}
+                        value={
+                          (
+                            tempSettings[tempSettings.environment].stt
+                              .vad as VadConfig
+                          ).threshold || 0.5
+                        }
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          const vadConfig = tempSettings[currentEnv].stt
+                            .vad as VadConfig;
                           setTempSettings({
                             ...tempSettings,
                             [currentEnv]: {
@@ -788,19 +1016,28 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         className="config-dialog__input"
                       />
                     </div>
-                    
+
                     <div className="config-dialog__vad-field">
-                      <Label htmlFor="vad-min-speech" className="config-dialog__vad-label">
+                      <Label
+                        htmlFor="vad-min-speech"
+                        className="config-dialog__vad-label"
+                      >
                         Min Speech (ms)
                       </Label>
                       <Input
                         id="vad-min-speech"
                         type="number"
                         min="0"
-                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).min_speech_ms || 250}
+                        value={
+                          (
+                            tempSettings[tempSettings.environment].stt
+                              .vad as VadConfig
+                          ).min_speech_ms || 250
+                        }
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          const vadConfig = tempSettings[currentEnv].stt
+                            .vad as VadConfig;
                           setTempSettings({
                             ...tempSettings,
                             [currentEnv]: {
@@ -809,7 +1046,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                                 ...tempSettings[currentEnv].stt,
                                 vad: {
                                   ...vadConfig,
-                                  min_speech_ms: parseInt(e.target.value) || 250,
+                                  min_speech_ms:
+                                    parseInt(e.target.value) || 250,
                                 },
                               },
                             },
@@ -818,19 +1056,28 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         className="config-dialog__input"
                       />
                     </div>
-                    
+
                     <div className="config-dialog__vad-field">
-                      <Label htmlFor="vad-min-silence" className="config-dialog__vad-label">
+                      <Label
+                        htmlFor="vad-min-silence"
+                        className="config-dialog__vad-label"
+                      >
                         Min Silence (ms)
                       </Label>
                       <Input
                         id="vad-min-silence"
                         type="number"
                         min="0"
-                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).min_silence_ms || 500}
+                        value={
+                          (
+                            tempSettings[tempSettings.environment].stt
+                              .vad as VadConfig
+                          ).min_silence_ms || 500
+                        }
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          const vadConfig = tempSettings[currentEnv].stt
+                            .vad as VadConfig;
                           setTempSettings({
                             ...tempSettings,
                             [currentEnv]: {
@@ -839,7 +1086,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                                 ...tempSettings[currentEnv].stt,
                                 vad: {
                                   ...vadConfig,
-                                  min_silence_ms: parseInt(e.target.value) || 500,
+                                  min_silence_ms:
+                                    parseInt(e.target.value) || 500,
                                 },
                               },
                             },
@@ -848,19 +1096,28 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                         className="config-dialog__input"
                       />
                     </div>
-                    
+
                     <div className="config-dialog__vad-field">
-                      <Label htmlFor="vad-max-segment" className="config-dialog__vad-label">
+                      <Label
+                        htmlFor="vad-max-segment"
+                        className="config-dialog__vad-label"
+                      >
                         Max Segment (ms)
                       </Label>
                       <Input
                         id="vad-max-segment"
                         type="number"
                         min="0"
-                        value={(tempSettings[tempSettings.environment].stt.vad as VadConfig).max_segment_ms || 30000}
+                        value={
+                          (
+                            tempSettings[tempSettings.environment].stt
+                              .vad as VadConfig
+                          ).max_segment_ms || 30000
+                        }
                         onChange={(e) => {
                           const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt.vad as VadConfig;
+                          const vadConfig = tempSettings[currentEnv].stt
+                            .vad as VadConfig;
                           setTempSettings({
                             ...tempSettings,
                             [currentEnv]: {
@@ -869,7 +1126,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                                 ...tempSettings[currentEnv].stt,
                                 vad: {
                                   ...vadConfig,
-                                  max_segment_ms: parseInt(e.target.value) || 30000,
+                                  max_segment_ms:
+                                    parseInt(e.target.value) || 30000,
                                 },
                               },
                             },
