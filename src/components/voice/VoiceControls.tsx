@@ -297,36 +297,51 @@ export function VoiceControls() {
       keywords.forEach((keyword: string) => {
         keywordsObj[keyword] = keyword;
       });
-      console.log("🔑 Updating keywords dynamically:", keywordsObj);
-      try {
-        connection.setKeywords(keywordsObj);
-        // Update ref immediately to prevent duplicate calls
+      // Only set keywords if there are any (don't send empty event)
+      if (Object.keys(keywordsObj).length > 0) {
+        console.log("🔑 Updating keywords dynamically:", keywordsObj);
+        try {
+          connection.setKeywords(keywordsObj);
+          // Update ref immediately to prevent duplicate calls
+          lastAppliedKeywordsRef.current = currentKeywordsJson;
+        } catch (error) {
+          console.error("❌ Error updating keywords:", error);
+        }
+      } else {
+        // Update ref even if empty to prevent re-checking
         lastAppliedKeywordsRef.current = currentKeywordsJson;
-      } catch (error) {
-        console.error("❌ Error updating keywords:", error);
       }
     }
 
     // Check if schema values changed
     const currentSchemaValuesJson = JSON.stringify(schemaValues);
     if (currentSchemaValuesJson !== lastAppliedSchemaValuesRef.current) {
-      console.log("📋 Updating schema values dynamically:", schemaValues);
-      try {
-        // Update ref immediately before async call to prevent duplicate calls
+      // Only set schema values if there are any (don't send empty event)
+      if (Object.keys(schemaValues).length > 0) {
+        console.log("📋 Updating schema values dynamically:", schemaValues);
+        try {
+          // Update ref immediately before async call to prevent duplicate calls
+          lastAppliedSchemaValuesRef.current = currentSchemaValuesJson;
+          connection.setSchemaValues(schemaValues, (response) => {
+            if (response.status === "ok") {
+              console.log("✅ Schema values updated successfully");
+            } else {
+              console.warn(
+                "⚠️ Schema values update warning:",
+                response.message
+              );
+              // Revert ref on error so it can be retried
+              lastAppliedSchemaValuesRef.current = "";
+            }
+          });
+        } catch (error) {
+          console.error("❌ Error updating schema values:", error);
+          // Revert ref on error so it can be retried
+          lastAppliedSchemaValuesRef.current = "";
+        }
+      } else {
+        // Update ref even if empty to prevent re-checking
         lastAppliedSchemaValuesRef.current = currentSchemaValuesJson;
-        connection.setSchemaValues(schemaValues, (response) => {
-          if (response.status === "ok") {
-            console.log("✅ Schema values updated successfully");
-          } else {
-            console.warn("⚠️ Schema values update warning:", response.message);
-            // Revert ref on error so it can be retried
-            lastAppliedSchemaValuesRef.current = "";
-          }
-        });
-      } catch (error) {
-        console.error("❌ Error updating schema values:", error);
-        // Revert ref on error so it can be retried
-        lastAppliedSchemaValuesRef.current = "";
       }
     }
   }, [settings]);
@@ -669,26 +684,33 @@ export function VoiceControls() {
           toast.success("Connected - Recording started");
 
           try {
-            // Apply keywords (always set, even if empty to clear any previous values)
+            // Apply keywords (only if not empty - don't send empty event)
             const keywords = currentSettings.stt.keywords || [];
             const keywordsObj: Record<string, string> = {};
             keywords.forEach((keyword: string) => {
               keywordsObj[keyword] = keyword;
             });
-            console.log("🔑 Applying keywords:", keywordsObj);
-            connection.setKeywords(keywordsObj);
+            if (Object.keys(keywordsObj).length > 0) {
+              console.log("🔑 Applying keywords:", keywordsObj);
+              connection.setKeywords(keywordsObj);
+            }
             lastAppliedKeywordsRef.current = JSON.stringify(keywords);
 
-            // Apply schema values (always set, even if empty to clear any previous values)
+            // Apply schema values (only if not empty - don't send empty event)
             const schemaValues = currentSettings.stt.schemaValues || {};
-            console.log("📋 Applying schema values:", schemaValues);
-            connection.setSchemaValues(schemaValues, (response) => {
-              if (response.status === "ok") {
-                console.log("✅ Schema values set successfully");
-              } else {
-                console.warn("⚠️ Schema values set with warning:", response.message);
-              }
-            });
+            if (Object.keys(schemaValues).length > 0) {
+              console.log("📋 Applying schema values:", schemaValues);
+              connection.setSchemaValues(schemaValues, (response) => {
+                if (response.status === "ok") {
+                  console.log("✅ Schema values set successfully");
+                } else {
+                  console.warn(
+                    "⚠️ Schema values set with warning:",
+                    response.message
+                  );
+                }
+              });
+            }
             lastAppliedSchemaValuesRef.current = JSON.stringify(schemaValues);
 
             await setupAudioPipeline(connection);

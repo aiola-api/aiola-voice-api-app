@@ -4,7 +4,7 @@ import "./styles/globals.css";
 import App from "./App.tsx";
 
 // Set the document title
-document.title = "aiOla Voice API App";
+document.title = "VAP";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

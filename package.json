@@ -1,13 +1,18 @@
 {
-  "name": "aiOla Voice API App",
+  "name": "voice-api-app",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npx vitest",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "release:prepare": "npm run lint && npm run build"
   },
   "dependencies": {
     "@aiola/sdk": "^2.2.0",
@@ -49,6 +54,11 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
-    "vite": "^5.4.20"
+    "vite": "^5.4.20",
+    "vitest": "^3.0.5",
+    "jsdom": "^26.0.0",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3"
   }
 }

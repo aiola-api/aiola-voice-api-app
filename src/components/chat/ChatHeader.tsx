@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
   IconAdjustmentsAlt,
+  IconBrandGithub,
   IconCircleFilled,
   IconCopy,
   IconInfoCircle,
@@ -65,47 +66,45 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
         <div className="chat-header__left-section">
           <div className="chat-header__content">
             <div className="chat-header__title-row">
-              <h1 className="chat-header__title">aiOla Voice Api APP</h1>
+              <h1 className="chat-header__title">VAP</h1>
               <div className="chat-header__environment-chip">
                 {currentSettings.environment.toUpperCase()}
               </div>
               <div className="chat-header__status">
                 <div className="chat-header__microphone-status">
                   <IconCircleFilled
-                    className={`chat-header__microphone-indicator ${
-                      audio.microphoneState === "connected"
-                        ? "chat-header__microphone-indicator--connected"
-                        : audio.microphoneState === "ready"
+                    className={`chat-header__microphone-indicator ${audio.microphoneState === "connected"
+                      ? "chat-header__microphone-indicator--connected"
+                      : audio.microphoneState === "ready"
                         ? "chat-header__microphone-indicator--ready"
                         : audio.microphoneState === "connecting"
-                        ? "chat-header__microphone-indicator--connecting"
-                        : audio.microphoneState === "preparingMic"
-                        ? "chat-header__microphone-indicator--preparingMic"
-                        : "chat-header__microphone-indicator--idle"
-                    }`}
+                          ? "chat-header__microphone-indicator--connecting"
+                          : audio.microphoneState === "preparingMic"
+                            ? "chat-header__microphone-indicator--preparingMic"
+                            : "chat-header__microphone-indicator--idle"
+                      }`}
                   />
                   <span
-                    className={`chat-header__microphone-text ${
-                      audio.microphoneState === "connected"
-                        ? "chat-header__microphone-text--connected"
-                        : audio.microphoneState === "ready"
+                    className={`chat-header__microphone-text ${audio.microphoneState === "connected"
+                      ? "chat-header__microphone-text--connected"
+                      : audio.microphoneState === "ready"
                         ? "chat-header__microphone-text--ready"
                         : audio.microphoneState === "connecting"
-                        ? "chat-header__microphone-text--connecting"
-                        : audio.microphoneState === "preparingMic"
-                        ? "chat-header__microphone-text--preparingMic"
-                        : "chat-header__microphone-text--idle"
-                    }`}
+                          ? "chat-header__microphone-text--connecting"
+                          : audio.microphoneState === "preparingMic"
+                            ? "chat-header__microphone-text--preparingMic"
+                            : "chat-header__microphone-text--idle"
+                      }`}
                   >
                     {audio.microphoneState === "connected"
                       ? "Recording"
                       : audio.microphoneState === "ready"
-                      ? "Ready"
-                      : audio.microphoneState === "connecting"
-                      ? "Connecting"
-                      : audio.microphoneState === "preparingMic"
-                      ? "Preparing Mic"
-                      : "Idle"}
+                        ? "Ready"
+                        : audio.microphoneState === "connecting"
+                          ? "Connecting"
+                          : audio.microphoneState === "preparingMic"
+                            ? "Preparing Mic"
+                            : "Idle"}
                   </span>
                 </div>
               </div>
@@ -188,13 +187,24 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
             <IconAdjustmentsAlt />
           </Button>
         </div>
-        <Tooltip
-          className="chat-header__version-icon"
-          content={`version: ${VERSION}
+        <div className="chat-header__top-actions">
+          <Tooltip
+            className="chat-header__version-icon"
+            content={`version: ${VERSION}
 aiOlaSDK: ${AIOLA_SDK_VERSION}`}
-        >
-          <IconInfoCircle />
-        </Tooltip>
+          >
+            <IconInfoCircle />
+          </Tooltip>
+          <a
+            href="https://github.com/aiola-api/aiola-voice-api-app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="chat-header__github-link"
+            aria-label="View on GitHub"
+          >
+            <IconBrandGithub />
+          </a>
+        </div>
       </div>
     </header>
   );

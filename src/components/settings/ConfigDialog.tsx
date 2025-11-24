@@ -522,20 +522,26 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
 
       // Set schema values (use validated parsed value)
       const schemaValues = validation.parsed || {};
-      connection.setSchemaValues(schemaValues, (response) => {
-        if (response.status === "ok") {
-          toast.success("Schema values set successfully");
-          console.log("✅ Schema values set successfully:", schemaValues);
-        } else {
-          toast.warning(
-            `Schema values set with warning: ${
-              response.message || "Unknown warning"
-            }`
-          );
-          console.warn("⚠️ Schema values set with warning:", response.message);
-        }
+      // Only set schema values if there are any (don't send empty event)
+      if (Object.keys(schemaValues).length > 0) {
+        connection.setSchemaValues(schemaValues, (response) => {
+          if (response.status === "ok") {
+            toast.success("Schema values set successfully");
+            console.log("✅ Schema values set successfully:", schemaValues);
+          } else {
+            toast.warning(
+              `Schema values set with warning: ${
+                response.message || "Unknown warning"
+              }`
+            );
+            console.warn("⚠️ Schema values set with warning:", response.message);
+          }
+          setIsSettingSchemaValues(false);
+        });
+      } else {
+        toast.warning("Schema values are empty. No event sent.");
         setIsSettingSchemaValues(false);
-      });
+      }
     } catch (error) {
       console.error("❌ Error setting schema values:", error);
       toast.error(

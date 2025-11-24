@@ -45,14 +45,14 @@ interface QuickVoicePickerProps {
 export function QuickVoicePicker({ className = "" }: QuickVoicePickerProps) {
   const [settings, setSettings] = useRecoilState(settingsState);
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const currentSettings = getCurrentSettings(settings);
   const currentVoice = currentSettings.tts.voice;
   const currentVoiceLabel = TTS_VOICES.find(v => v.value === currentVoice)?.label || currentVoice;
 
   const handleVoiceChange = (newVoice: TTSVoice) => {
     const currentEnv = settings.environment;
-    
+
     // Update the TTS voice in settings
     const updatedSettings = {
       ...settings,
@@ -67,7 +67,7 @@ export function QuickVoicePicker({ className = "" }: QuickVoicePickerProps) {
 
     setSettings(updatedSettings);
     localStorage.setItem("aiola-settings", JSON.stringify(updatedSettings));
-    
+
     toast.success(`Voice changed to ${TTS_VOICES.find(v => v.value === newVoice)?.label}`);
     setIsOpen(false);
   };
@@ -80,7 +80,7 @@ export function QuickVoicePicker({ className = "" }: QuickVoicePickerProps) {
         open={isOpen}
         onOpenChange={setIsOpen}
       >
-        <SelectTrigger className="quick-voice-picker__trigger">
+        <SelectTrigger className="quick-voice-picker__trigger" showIcon={false}>
           <div className="quick-voice-picker__content">
             <span className="quick-voice-picker__label">Voice:</span>
             <span className="quick-voice-picker__current-voice">{currentVoiceLabel}</span>
@@ -89,8 +89,8 @@ export function QuickVoicePicker({ className = "" }: QuickVoicePickerProps) {
         </SelectTrigger>
         <SelectContent className="quick-voice-picker__content">
           {TTS_VOICES.map((voice) => (
-            <SelectItem 
-              key={voice.value} 
+            <SelectItem
+              key={voice.value}
               value={voice.value}
               className="quick-voice-picker__item"
             >

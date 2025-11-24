@@ -85,25 +85,31 @@
 }
 
 .chat-header__microphone-indicator--connected {
-  color: #ef4444; /* Red for recording */
+  color: #ef4444;
+  /* Red for recording */
 }
 
 .chat-header__microphone-indicator--ready {
-  color: #10b981; /* Green for ready */
+  color: #10b981;
+  /* Green for ready */
 }
 
 .chat-header__microphone-indicator--connecting {
-  color: #f59e0b; /* Amber for connecting */
+  color: #f59e0b;
+  /* Amber for connecting */
 }
 
 .chat-header__microphone-indicator--preparingMic {
-  color: #ef4444; /* Red for preparing mic (same as connected but different state) */
-  background-color: #f59e0b; /* Amber background like connecting state */
+  color: #ef4444;
+  /* Red for preparing mic (same as connected but different state) */
+  background-color: #f59e0b;
+  /* Amber background like connecting state */
   border-radius: 50%;
 }
 
 .chat-header__microphone-indicator--idle {
-  color: #6b7280; /* Gray for idle */
+  color: #6b7280;
+  /* Gray for idle */
 }
 
 .chat-header__microphone-text {
@@ -112,23 +118,28 @@
 }
 
 .chat-header__microphone-text--connected {
-  color: #dc2626; /* Red for recording */
+  color: #dc2626;
+  /* Red for recording */
 }
 
 .chat-header__microphone-text--ready {
-  color: #059669; /* Green for ready */
+  color: #059669;
+  /* Green for ready */
 }
 
 .chat-header__microphone-text--connecting {
-  color: #d97706; /* Amber for connecting */
+  color: #d97706;
+  /* Amber for connecting */
 }
 
 .chat-header__microphone-text--preparingMic {
-  color: #dc2626; /* Red for preparing mic (same as connected but different state) */
+  color: #dc2626;
+  /* Red for preparing mic (same as connected but different state) */
 }
 
 .chat-header__microphone-text--idle {
-  color: #6b7280; /* Gray for idle */
+  color: #6b7280;
+  /* Gray for idle */
 }
 
 .chat-header__subtitle {
@@ -215,22 +226,54 @@
   border-radius: 0.25rem;
 }
 
-/* Version display styles */
+/* Version and GitHub link styles */
+.chat-header__top-actions {
+  position: absolute;
+  top: 0rem;
+  right: 0.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .chat-header__version-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 1.25rem;
   width: 1.25rem;
   color: #ffffff;
   opacity: 0.8;
   cursor: pointer;
   transition: opacity 0.2s ease;
-  position: absolute;
-  top: 0rem;
-  right: 0.5rem;
-  z-index: 10;
 }
 
 .chat-header__version-icon:hover {
   opacity: 1;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
+}
+
+.chat-header__github-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.25rem;
+  width: 1.25rem;
+  color: #ffffff;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.chat-header__github-link:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+.chat-header__github-link svg {
+  height: 1.25rem;
+  width: 1.25rem;
 }

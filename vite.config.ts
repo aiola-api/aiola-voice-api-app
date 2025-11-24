@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -21,6 +22,11 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
   base: process.env.NODE_ENV === "production" ? "/aiola-voice-api-app/" : "/",
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+  },
   build: {
     outDir: "docs",
     rollupOptions: {

@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/) [![Vite](https://img.shields.io/badge/Vite-B73BFE?logo=vite&logoColor=FFD62E)](https://vitejs.dev/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
+[![CI](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/ci.yml/badge.svg)](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/ci.yml) [![Release](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/release.yml/badge.svg)](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/release.yml) [![Deploy Pages](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/[OWNER]/aiola-voice-api-app/actions/workflows/deploy-pages.yml)
+
 A powerful **aiOla SDK-powered** voice interaction web application that showcases the full capabilities of aiOla's advanced speech processing technology. Built with React and designed specifically to demonstrate aiOla's enterprise-grade voice AI features including real-time speech-to-text, intelligent transcription, text-to-speech synthesis, and conversational AI in a polished, production-ready interface.
 
 ## ✨ Features
