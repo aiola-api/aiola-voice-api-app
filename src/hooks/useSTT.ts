@@ -165,7 +165,7 @@ export function useSTT() {
 
         // Cache the new connection with its settings
         streamCache = {
-          connection: stream as StreamConnection,
+          connection: stream as unknown as StreamConnection,
           settings: currentSettingsObj,
         };
 
@@ -176,7 +176,7 @@ export function useSTT() {
           error: undefined,
         });
 
-        return stream as StreamConnection;
+        return stream as unknown as StreamConnection;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to create stream";

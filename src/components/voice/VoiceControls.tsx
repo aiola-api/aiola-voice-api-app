@@ -1413,7 +1413,7 @@ export function VoiceControls() {
 
     // Start keepalive to prevent connection timeout
     if (connectionRef.current && !keepaliveTimerRef.current) {
-      keepaliveTimerRef.current = setInterval(() => {
+      keepaliveTimerRef.current = window.setInterval(() => {
         if (connectionRef.current && connectionRef.current.connected) {
           // Send a minimal ping to keep connection alive
           try {
