@@ -9,13 +9,13 @@ import {
   IconPlayerPause,
 } from "@tabler/icons-react";
 import { audioState } from "@/state/audio";
-import { settingsState } from "@/state/settings";
+import { settingsState, type SettingsState } from "@/state/settings";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,

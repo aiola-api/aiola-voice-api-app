@@ -9,14 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { settingsState, type TTSVoice } from "@/state/settings";
+import { settingsState, type TTSVoice, type SettingsState } from "@/state/settings";
 import { audioState } from "@/state/audio";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
@@ -30,15 +30,7 @@ function getCurrentSettings(settings: any) {
 }
 
 const TTS_VOICES: { value: TTSVoice; label: string }[] = [
-  { value: "tara", label: "Tara" },
-  { value: "zoe", label: "Zoe" },
-  { value: "zac", label: "Zac" },
-  { value: "dan", label: "Dan" },
-  { value: "jess", label: "Jess" },
-  { value: "leo", label: "Leo" },
-  { value: "mia", label: "Mia" },
-  { value: "julia", label: "Julia" },
-  { value: "leah", label: "Leah" },
+  { value: "en_us_female", label: "English (US) - Female" },
 ];
 
 interface TTSDialogProps {

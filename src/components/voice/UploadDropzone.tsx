@@ -5,14 +5,14 @@ import {
   IconFileUpload,
 } from "@tabler/icons-react";
 import { conversationState, type ChatMessage } from "@/state/conversation";
-import { settingsState } from "@/state/settings";
+import { settingsState, type SettingsState } from "@/state/settings";
 import { useSTT } from "@/hooks/useSTT";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
 import "./UploadDropzone.css";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
