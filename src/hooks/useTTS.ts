@@ -1,10 +1,10 @@
 import { useRecoilValue } from "recoil";
-import { settingsState } from "@/state/settings";
+import { settingsState, type SettingsState } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback, useState } from "react";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
@@ -36,15 +36,13 @@ export function useTTS() {
 
         const currentSettings = getCurrentSettings(settings);
         console.log("TTS: Settings", { 
-          voice: voice || currentSettings.tts.voice, 
-          language: currentSettings.tts.language,
+          voice_id: voice || currentSettings.tts.voice,
           hasApiKey: !!currentSettings.apiKey 
         });
 
         const audioStream = await client.tts.synthesize({
           text,
-          voice: (voice || currentSettings.tts.voice) as string,
-          language: currentSettings.tts.language,
+          voice_id: (voice || currentSettings.tts.voice) as string,
         });
         console.log("TTS: Stream obtained");
 
@@ -78,24 +76,12 @@ export function useTTS() {
           offset += chunk.length;
         }
 
-        // Try different MIME types for better browser compatibility
-        let blob: Blob;
-        try {
-          // First try with audio/mpeg
-          blob = new Blob([combined], { type: "audio/mpeg" });
-          console.log("TTS: Blob created with audio/mpeg", { 
-            size: blob.size, 
-            type: blob.type
-          });
-        } catch (error) {
-          // Fallback to audio/mp3 if audio/mpeg fails
-          console.log("TTS: audio/mpeg failed, trying audio/mp3");
-          blob = new Blob([combined], { type: "audio/mp3" });
-          console.log("TTS: Blob created with audio/mp3", { 
-            size: blob.size, 
-            type: blob.type
-          });
-        }
+        // Create blob with audio/mpeg MIME type
+        const blob = new Blob([combined], { type: "audio/mpeg" });
+        console.log("TTS: Blob created", { 
+          size: blob.size, 
+          type: blob.type
+        });
         
         return blob;
       } catch (error) {

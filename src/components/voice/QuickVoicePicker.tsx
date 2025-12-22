@@ -13,15 +13,7 @@ import { componentClassName } from "@/lib/utils";
 import "./QuickVoicePicker.css";
 
 const TTS_VOICES: { value: TTSVoice; label: string }[] = [
-  { value: "tara", label: "Tara" },
-  { value: "zoe", label: "Zoe" },
-  { value: "zac", label: "Zac" },
-  { value: "dan", label: "Dan" },
-  { value: "jess", label: "Jess" },
-  { value: "leo", label: "Leo" },
-  { value: "mia", label: "Mia" },
-  { value: "julia", label: "Julia" },
-  { value: "leah", label: "Leah" },
+  { value: "en_us_female", label: "English (US) - Female" },
 ];
 
 // Helper function to get current environment settings

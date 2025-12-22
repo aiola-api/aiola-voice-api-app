@@ -26,16 +26,7 @@ export type STTLanguageCode =
   | "zh_CN";
 
 //TODO get form aiOla SDK
-export type TTSVoice =
-  | "tara"
-  | "zoe"
-  | "zac"
-  | "dan"
-  | "jess"
-  | "leo"
-  | "mia"
-  | "julia"
-  | "leah";
+export type TTSVoice = "en_us_female";
 
 export type Environment = "prod" | "dev" | "custom";
 
@@ -118,7 +109,7 @@ const defaultSettings: SettingsState = {
       schemaValues: {},
     },
     tts: {
-      voice: "tara",
+      voice: "en_us_female",
       language: "en",
     },
   },
@@ -137,7 +128,7 @@ const defaultSettings: SettingsState = {
       schemaValues: {},
     },
     tts: {
-      voice: "tara",
+      voice: "en_us_female",
       language: "en",
     },
   },
@@ -156,7 +147,7 @@ const defaultSettings: SettingsState = {
       schemaValues: {},
     },
     tts: {
-      voice: "tara",
+      voice: "en_us_female",
       language: "en",
     },
   },
@@ -199,7 +190,7 @@ function loadSettingsFromStorage(): SettingsState {
               schemaValues: parsed.stt?.schemaValues || {},
             },
             tts: {
-              voice: parsed.tts?.voice || "tara",
+              voice: parsed.tts?.voice || "en_us_female",
               language: "en",
             },
           },
@@ -218,7 +209,7 @@ function loadSettingsFromStorage(): SettingsState {
               schemaValues: {},
             },
             tts: {
-              voice: "tara",
+              voice: "en_us_female",
               language: "en",
             },
           },
@@ -237,7 +228,7 @@ function loadSettingsFromStorage(): SettingsState {
               schemaValues: {},
             },
             tts: {
-              voice: "tara",
+              voice: "en_us_female",
               language: "en",
             },
           },
