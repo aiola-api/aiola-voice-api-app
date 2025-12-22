@@ -7,7 +7,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { IconChevronDown } from "@tabler/icons-react";
-import { settingsState, type TTSVoice } from "@/state/settings";
+import { settingsState, type TTSVoice, type SettingsState } from "@/state/settings";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
 import "./QuickVoicePicker.css";
@@ -17,7 +17,7 @@ const TTS_VOICES: { value: TTSVoice; label: string }[] = [
 ];
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,

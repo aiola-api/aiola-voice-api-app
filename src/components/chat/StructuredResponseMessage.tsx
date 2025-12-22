@@ -13,7 +13,6 @@ interface StructuredResponseMessageProps {
 
 function StructuredResponseMessageBase({
   message,
-  showTime: _showTime,
   className,
 }: StructuredResponseMessageProps) {
   // Pretty print JSON with syntax highlighting classes

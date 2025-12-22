@@ -9,14 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { settingsState, type TTSVoice } from "@/state/settings";
+import { settingsState, type TTSVoice, type SettingsState } from "@/state/settings";
 import { audioState } from "@/state/audio";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,

@@ -1,11 +1,11 @@
 import { useRecoilValue } from "recoil";
 import { type StreamConnection } from "@/state/connection";
-import { settingsState, type VadConfig, type SchemaValues } from "@/state/settings";
+import { settingsState, type VadConfig, type SchemaValues, type SettingsState } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback } from "react";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
@@ -118,8 +118,8 @@ export function useSTT() {
           streamCache.settings.language !== currentSettingsObj.language ||
           JSON.stringify(streamCache.settings.keywords) !==
             JSON.stringify(currentSettingsObj.keywords) ||
-          ((streamCache.settings as any).workflowId ||
-            (streamCache.settings as any).flowid ||
+          ((streamCache.settings as { workflowId?: string; flowid?: string }).workflowId ||
+            (streamCache.settings as { workflowId?: string; flowid?: string }).flowid ||
             "") !== (currentSettingsObj.workflowId || "") ||
           JSON.stringify(streamCache.settings.vad) !==
             JSON.stringify(currentSettingsObj.vad) ||
@@ -132,7 +132,7 @@ export function useSTT() {
           // Update state metadata (don't store stream object - it's mutable)
           // Don't set isStreaming here - let the caller manage it
           updateConnectionState({
-            currentFlowId: currentSettings.stt.flowid,
+            currentFlowId: currentSettings.workflowId,
             error: undefined,
           });
           return streamCache.connection;
@@ -144,7 +144,7 @@ export function useSTT() {
           langCode: string;
           keywords: Record<string, string>;
           workflowId?: string;
-          vadConfig?: any;
+          vadConfig?: VadConfig;
         } = {
           langCode: currentSettingsObj.language,
           keywords: keywordsObj,

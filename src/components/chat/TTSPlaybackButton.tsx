@@ -3,12 +3,12 @@ import { useRecoilState } from "recoil";
 import { Button } from "@/components/ui/button";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
 import { audioState } from "@/state/audio";
-import { settingsState } from "@/state/settings";
+import { settingsState, type SettingsState } from "@/state/settings";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 
 // Helper function to get current environment settings
-function getCurrentSettings(settings: any) {
+function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
   return {
     apiKey: settings[env].connection.apiKey,
