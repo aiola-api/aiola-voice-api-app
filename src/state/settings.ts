@@ -125,8 +125,8 @@ const defaultSettings: SettingsState = {
   dev: {
     connection: {
       apiKey: "",
-      baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
-      authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+      baseUrl: "https://dev-vp1-api.internal.aiola.ai",
+      authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
       workflowId: "",
     },
     stt: {
@@ -206,8 +206,8 @@ function loadSettingsFromStorage(): SettingsState {
           dev: {
             connection: {
               apiKey: "", // Dev API key starts empty
-              baseUrl: "https://dev-vp1-uw2-api.internal.aiola.ai",
-              authBaseUrl: "https://dev-vp1-uw2-auth.internal.aiola.ai",
+              baseUrl: "https://dev-vp1-api.internal.aiola.ai",
+              authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
               workflowId: "",
             },
             stt: {
