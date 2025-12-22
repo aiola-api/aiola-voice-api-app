@@ -40,6 +40,7 @@ export function UnsupportedBrowserPopup({ onClose }: UnsupportedBrowserPopupProp
           <ul>
             <li>ChatGPT-Atlas</li>
             <li>Chrome</li>
+            <li>Safari</li>
           </ul>
         </div>
 

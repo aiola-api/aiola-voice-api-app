@@ -5,7 +5,7 @@
 
 /**
  * Checks if the current browser is supported
- * Supported browsers: ChatGPT-Atlas and Chrome
+ * Supported browsers: ChatGPT-Atlas, Chrome, and Safari
  * @returns true if browser is supported, false otherwise
  */
 export function isSupportedBrowser(): boolean {
@@ -18,6 +18,11 @@ export function isSupportedBrowser(): boolean {
 
   // Check for Chrome (but not Edge which also contains "Chrome" in user agent)
   if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
+    return true;
+  }
+
+  // Check for Safari (but not Chrome-based browsers which also contain "Safari" in user agent)
+  if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
     return true;
   }
 
