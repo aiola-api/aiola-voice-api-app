@@ -1,0 +1,207 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Override release type (major | minor | patch)"
+        required: false
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      version:
+        description: "Override the exact version (x.y.z)"
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  NODE_VERSION: 20
+  BUILD_DIR: dist
+
+jobs:
+  release:
+    name: Build, Release, Upload Artifact
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read_version.outputs.version }}
+      should_deploy: ${{ steps.env_check.outputs.should_deploy }}
+      should_release: ${{ steps.release_type.outputs.should_release }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect environment
+        id: env_check
+        run: |
+          if [ "${ACT:-}" = "true" ]; then
+            echo "is_act=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_act=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine release type
+        id: release_type
+        env:
+          RELEASE_TYPE_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_type || '' }}
+        run: |
+          if [ -n "$RELEASE_TYPE_INPUT" ]; then
+            type="$RELEASE_TYPE_INPUT"
+            should_release="true"
+          else
+            prev_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$prev_tag" ]; then
+              range="$prev_tag..HEAD"
+            else
+              range=""
+            fi
+            subjects=$(git log $range --no-merges --pretty=format:%s || echo "")
+            body=$(git log $range --no-merges --pretty=format:%b || echo "")
+            
+            # Filter out commits that shouldn't trigger a release
+            release_worthy_count=$(echo "$subjects" | grep -vE "^(chore|docs|style|test|ci|build)(\(.*\))?:" | grep -v "^$" | wc -l || echo "0")
+            
+            if [ "$release_worthy_count" -gt 0 ]; then
+              should_release="true"
+              if printf '%s\n%s\n' "$subjects" "$body" | grep -iq "BREAKING CHANGE"; then
+                type="major"
+              elif echo "$subjects" | grep -Eiq "^feat(\(|:)" ; then
+                type="minor"
+              else
+                type="patch"
+              fi
+            else
+              should_release="false"
+              type="patch"
+            fi
+          fi
+          echo "type=$type" >> "$GITHUB_OUTPUT"
+          echo "release_type=$type" >> "$GITHUB_OUTPUT"
+          echo "should_release=$should_release" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version
+        id: bump_version
+        if: steps.release_type.outputs.should_release == 'true'
+        env:
+          RELEASE_TYPE_INPUT: ${{ steps.release_type.outputs.release_type }}
+          RELEASE_VERSION_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}
+        run: |
+          if [ -n "$RELEASE_VERSION_INPUT" ]; then
+            npm version "$RELEASE_VERSION_INPUT" --no-git-tag-version
+          else
+            npm version "$RELEASE_TYPE_INPUT" --no-git-tag-version
+          fi
+
+      - name: Read new version
+        id: read_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+        env:
+          CI: true
+
+      - name: Build
+        run: npm run build
+
+      - name: Generate release notes
+        id: changelog
+        if: steps.release_type.outputs.should_release == 'true'
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$prev_tag" ]; then
+            range="$prev_tag..HEAD"
+          else
+            range=""
+          fi
+          {
+            echo "# aiOla Voice API App v$RELEASE_VERSION"
+            echo
+            if git log $range --pretty=format:"- %s (%h)" >/tmp/gitlog.txt; then
+              cat /tmp/gitlog.txt
+            else
+              echo "- Initial release"
+            fi
+          } > release-notes.md
+
+      - name: Commit version bump
+        if: steps.env_check.outputs.is_act != 'true' && steps.release_type.outputs.should_release == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: release v$RELEASE_VERSION"
+          git tag "v$RELEASE_VERSION"
+
+      - name: Push changes
+        if: steps.env_check.outputs.is_act != 'true' && steps.release_type.outputs.should_release == 'true'
+        run: |
+          git push origin HEAD:main
+          git push origin "v$RELEASE_VERSION"
+
+      - name: Archive production build
+        id: archive
+        if: steps.release_type.outputs.should_release == 'true'
+        run: |
+          ARCHIVE_NAME="aiola-voice-api-app-v${RELEASE_VERSION}.zip"
+          zip -r "$ARCHIVE_NAME" "$BUILD_DIR"
+          echo "archive=$ARCHIVE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.env_check.outputs.is_act != 'true' && steps.release_type.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.read_version.outputs.version }}
+          name: v${{ steps.read_version.outputs.version }}
+          body_path: release-notes.md
+          files: ${{ steps.archive.outputs.archive }}
+
+      - name: Upload GitHub Pages artifact
+        if: steps.env_check.outputs.should_deploy == 'true' && steps.release_type.outputs.should_release == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.BUILD_DIR }}
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: release
+    if: needs.release.outputs.should_deploy == 'true' && needs.release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

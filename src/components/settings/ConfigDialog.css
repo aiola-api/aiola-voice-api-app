@@ -1,0 +1,678 @@
+/* ConfigDialog Component Styles - Black-White-Gray Minimalist Theme */
+
+.config-dialog {
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Glass Effect Backdrop - Multiple selectors to ensure it works */
+[data-radix-dialog-overlay],
+div[data-radix-dialog-overlay],
+.fixed.inset-0.z-50 {
+  background: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(40px) saturate(150%) contrast(120%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(150%) contrast(120%) !important;
+}
+
+/* Stronger glass effect with additional properties */
+[data-radix-dialog-overlay]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05)
+  );
+  backdrop-filter: blur(60px) !important;
+  -webkit-backdrop-filter: blur(60px) !important;
+}
+
+/* Modal Overlay Backdrop with Glass Effect */
+.config-dialog__container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 50 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(5px) contrast(100%) !important;
+  -webkit-backdrop-filter: blur(60px) saturate(180%) contrast(140%) !important;
+}
+
+/* Dialog Content - Enhanced Glass Effect */
+.config-dialog__content {
+  position: absolute;
+  bottom: 1rem;
+  z-index: 60;
+  background: rgba(250, 250, 250, 0.98);
+  border: 3px solid #000000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 60%;
+  max-width: 1000px;
+  max-height: calc(100vh - 4rem);
+  /* Improved vertical centering - only grow if content needs it */
+  height: auto;
+  min-height: 60vh;
+  padding-bottom: 2rem;
+}
+
+/* Header Section */
+.config-dialog__header {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 3px solid #000000;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.config-dialog__header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.375rem;
+}
+
+.config-dialog__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  letter-spacing: -0.02em;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__close-button {
+  background: none;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__close-button:hover {
+  background: #000000;
+  color: white;
+}
+
+.config-dialog__description {
+  font-size: 0.875rem;
+  color: #52525b;
+  line-height: 1.4;
+  margin: 0;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Main Content Area */
+.config-dialog__main {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 1.5rem;
+  margin: 1rem 0;
+  /* Ensure proper scrolling when content overflows */
+  min-height: 0;
+}
+
+/* Section Styling */
+.config-dialog__section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #000000;
+}
+
+.config-dialog__section:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.config-dialog__section-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid #000000;
+}
+
+.config-dialog__section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__section-subtitle {
+  font-size: 0.8125rem;
+  color: #71717a;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  line-height: 1.3;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Form Field Groups */
+.config-dialog__field-group {
+  margin-bottom: 1.25rem;
+}
+
+.config-dialog__field-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Label Styling */
+.config-dialog__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.375rem;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__label--required::after {
+  content: " *";
+  color: #000000;
+}
+
+/* Input Styling */
+.config-dialog__input,
+.config-dialog__select,
+.config-dialog__textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #000000;
+  transition: all 0.15s ease;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Toggle Button Styling */
+.config-dialog__toggle-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.config-dialog__toggle-button {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.config-dialog__toggle-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.config-dialog__toggle-button--active {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+.config-dialog__toggle-button--active:hover {
+  background: #333333;
+  border-color: #333333;
+}
+
+.config-dialog__input:focus,
+.config-dialog__select:focus,
+.config-dialog__textarea:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Placeholder text styling */
+.config-dialog__input::placeholder,
+.config-dialog__select::placeholder,
+.config-dialog__textarea::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+.config-dialog__textarea {
+  resize: vertical;
+  min-height: 3.5rem;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+  line-height: 1.4;
+}
+
+/* Checkbox Group */
+.config-dialog__checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.config-dialog__checkbox-label {
+  font-size: 0.8125rem;
+  color: #52525b;
+  line-height: 1.3;
+  margin: 0;
+  cursor: pointer;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Custom checkbox styling - small and borderless */
+.config-dialog__checkbox-small {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid #000000 !important;
+  background: white !important;
+}
+
+.config-dialog__checkbox-small[data-state="checked"] {
+  background: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+.config-dialog__checkbox-small svg {
+  width: 10px !important;
+  height: 10px !important;
+  color: white !important;
+}
+
+/* Helper Text */
+.config-dialog__helper-text {
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-top: 0.25rem;
+  line-height: 1.3;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__textarea--error {
+  border-color: #ef4444;
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.config-dialog__error-text {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.25rem;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__info-box {
+  background: white;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  width: 100%;
+  text-align: center;
+}
+
+.config-dialog__info-text {
+  font-size: 0.75rem;
+  color: #52525b;
+  margin: 0;
+  line-height: 1.3;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Footer Section */
+.config-dialog__footer {
+  border-top: 3px solid #000000;
+  background: transparent;
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.config-dialog__button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.config_buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.config-dialog__button {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__button--outline {
+  background: white;
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+.config-dialog__button--outline:hover:not(:disabled) {
+  background: #f4f4f5;
+  border: 2px solid #000000;
+}
+
+.config-dialog__button--primary {
+  background: #000000;
+  color: white;
+  border: 2px solid #000000;
+}
+
+.config-dialog__button--primary:hover:not(:disabled) {
+  background: #1f1f1f;
+  border: 2px solid #000000;
+}
+
+.config-dialog__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #9ca3af !important;
+  border-color: #9ca3af !important;
+  color: white !important;
+}
+
+/* Responsive Design
+@media (max-width: 640px) {
+  .config-dialog__container {
+    padding: 1rem;
+  }
+
+  .config-dialog__content {
+    width: 95%;
+    height: auto;
+    min-height: 70vh;
+    max-width: none;
+    max-height: none;
+  }
+
+  .config-dialog__header,
+  .config-dialog__main,
+  .config-dialog__footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .config-dialog__header {
+    padding-top: 1.25rem;
+    padding-bottom: 0.875rem;
+  }
+
+  .config-dialog__main {
+    padding: 1.25rem 1rem;
+  }
+
+  .config-dialog__section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .config-dialog__field-group {
+    margin-bottom: 1rem;
+  }
+} */
+
+/* Dark Mode Support - Maintaining Light Background with Dark Borders */
+@media (prefers-color-scheme: dark) {
+  .config-dialog__content {
+    background: #fafafa;
+    border: 3px solid #000000;
+  }
+
+  .config-dialog__header {
+    background: #fafafa;
+    border-bottom: 3px solid #000000;
+  }
+
+  .config-dialog__footer {
+    background: #fafafa;
+    border-top: 3px solid #000000;
+  }
+
+  .config-dialog__main {
+    background: #fafafa;
+  }
+
+  .config-dialog__title {
+    color: #000000;
+  }
+
+  .config-dialog__description {
+    color: #52525b;
+  }
+
+  .config-dialog__section-title {
+    color: #000000;
+  }
+
+  .config-dialog__section-subtitle,
+  .config-dialog__helper-text {
+    color: #71717a;
+  }
+
+  .config-dialog__label {
+    color: #000000;
+  }
+
+  .config-dialog__input,
+  .config-dialog__select,
+  .config-dialog__textarea {
+    background: white;
+    border: 2px solid #000000;
+    color: #000000;
+  }
+
+  .config-dialog__input:focus,
+  .config-dialog__select:focus,
+  .config-dialog__textarea:focus {
+    border-color: #000000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Placeholder text styling for dark mode */
+  .config-dialog__input::placeholder,
+  .config-dialog__select::placeholder,
+  .config-dialog__textarea::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+  }
+
+  .config-dialog__checkbox-group {
+    background: transparent;
+    border: none;
+  }
+
+  .config-dialog__checkbox-label {
+    color: #52525b;
+  }
+
+  .config-dialog__info-box {
+    background: white;
+    border: 2px solid #000000;
+    width: 100%;
+  }
+
+  .config-dialog__info-text {
+    color: #52525b;
+  }
+
+  .config-dialog__section {
+    border-bottom: 2px solid #000000;
+  }
+
+  .config-dialog__section-header {
+    border-bottom: 3px solid #000000;
+  }
+
+  .config-dialog__button--outline {
+    background: white;
+    border: 2px solid #000000;
+    color: #000000;
+  }
+
+  .config-dialog__button--outline:hover:not(:disabled) {
+    background: #f4f4f5;
+    border: 2px solid #000000;
+  }
+
+  .config-dialog__button--primary {
+    background: #000000;
+    color: white;
+    border: 2px solid #000000;
+  }
+
+  .config-dialog__button--primary:hover:not(:disabled) {
+    background: #1f1f1f;
+    border: 2px solid #000000;
+  }
+}
+
+/* VAD Configuration Styles */
+.config-dialog__vad-config {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.config-dialog__vad-toggle {
+  margin-bottom: 1rem;
+}
+
+.config-dialog__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #000000;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+.config-dialog__checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.config-dialog__checkbox:checked {
+  background: #000000;
+  border-color: #000000;
+}
+
+.config-dialog__checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.config-dialog__vad-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.config-dialog__vad-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.config-dialog__vad-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
+}
+
+/* Responsive VAD fields */
+@media (max-width: 768px) {
+  .config-dialog__vad-fields {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

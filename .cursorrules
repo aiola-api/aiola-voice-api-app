@@ -1,0 +1,503 @@
+# Cursor Rules for aiOla Voice API Project
+
+## Core Principles
+
+### SOLID Principles
+
+- **Single Responsibility**: Each component/hook should have one clear purpose
+- **Open-Closed**: Components should be extensible but not modifiable for new features
+- **Liskov Substitution**: Subtypes should be substitutable for their base types
+- **Interface Segregation**: Split large interfaces into smaller, focused ones
+- **Dependency Inversion**: Depend on abstractions, not concretions
+
+### DRY (Don't Repeat Yourself)
+
+- Extract common logic into shared utilities and hooks
+- Create reusable components for similar UI patterns
+- Consolidate duplicate state management patterns
+
+### Security First
+
+- Validate all user inputs and file uploads
+- Sanitize data before API calls
+- No hardcoded credentials or sensitive data
+- Proper error handling for audio processing failures
+
+## Project-Specific Architecture
+
+### Component Structure
+
+- **Size Limit**: Keep components under 300 lines (auto-refactor if exceeded)
+- **Pattern**: Use functional components with hooks
+- **Props**: Implement proper TypeScript interfaces for all props
+- **Naming**: PascalCase for components, camelCase for utilities
+
+### TypeScript Standards
+
+- **Strict Typing**: No `any` types except where absolutely necessary
+- **Interface Definition**: Proper interfaces for all data structures
+- **Union Types**: Use for state management (Recoil atoms)
+- **Generics**: For reusable hooks and utilities
+
+### State Management (Recoil)
+
+- **Single Responsibility**: Each atom handles one concern
+- **Error Boundaries**: Implement for state failures
+- **Naming**: Use descriptive names (e.g., `conversationState`, `audioState`)
+
+### Audio & Security
+
+- **File Validation**: Check type, size, and content of audio files
+- **Input Sanitization**: Clean user inputs before API calls
+- **Error Handling**: Proper handling for audio processing failures
+- **Resource Cleanup**: Clean up audio resources in useEffect cleanup
+
+## Code Quality Rules
+
+### Component Composition
+
+- Prefer composition over inheritance
+- Use React.memo for expensive re-renders
+- Implement proper error boundaries for audio components
+
+### Performance & Accessibility
+
+- Use React.lazy for code splitting where appropriate
+- Ensure audio controls are keyboard accessible
+- Implement ARIA labels for voice interaction elements
+
+### File Organization
+
+- Maintain feature-based structure (chat/, voice/, ui/, etc.)
+- Group related functionality in custom hooks
+- Keep CSS modules co-located with components
+- Use index files for clean imports
+
+## Specific Implementation Rules
+
+### Component Rules
+
+```typescript
+// ✅ Good: Single responsibility, proper typing
+interface VoiceControlsProps {
+  onRecordingStart: () => void;
+  onRecordingStop: () => void;
+  disabled?: boolean;
+}
+
+const VoiceControls: React.FC<VoiceControlsProps> = ({
+  onRecordingStart,
+  onRecordingStop,
+  disabled = false,
+}) => {
+  // Component logic here
+};
+
+// ❌ Avoid: Multiple responsibilities, weak typing
+const BadComponent = (props) => {
+  // Mixed concerns, no proper typing
+};
+```
+
+### Hook Rules
+
+```typescript
+// ✅ Good: Focused hook with proper cleanup
+export const useAudioRecording = () => {
+  const [isRecording, setIsRecording] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup audio resources
+      if (mediaRecorder.current) {
+        mediaRecorder.current.stop();
+      }
+    };
+  }, []);
+
+  return { isRecording, startRecording, stopRecording };
+};
+
+// ❌ Avoid: Side effects without cleanup
+export const useBadAudio = () => {
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ audio: true });
+    // No cleanup!
+  }, []);
+};
+```
+
+### State Management Rules
+
+```typescript
+// ✅ Good: Single responsibility atoms
+export const audioState = atom({
+  key: "audioState",
+  default: {
+    isRecording: false,
+    currentSessionId: null,
+    error: null,
+  },
+});
+
+export const conversationState = atom({
+  key: "conversationState",
+  default: {
+    messages: [],
+    activeMessageId: null,
+  },
+});
+
+// ❌ Avoid: Mixed concerns in single atom
+export const badState = atom({
+  key: "badState",
+  default: {
+    // Mixed audio and conversation concerns
+  },
+});
+```
+
+### Security Rules
+
+```typescript
+// ✅ Good: Input validation and sanitization
+const handleFileUpload = (file: File) => {
+  // Validate file type
+  if (!["audio/wav", "audio/mp3", "audio/mp4"].includes(file.type)) {
+    throw new Error("Invalid file type");
+  }
+
+  // Validate file size (50MB limit)
+  if (file.size > 50 * 1024 * 1024) {
+    throw new Error("File too large");
+  }
+
+  // Sanitize filename
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+
+  // Process file
+  await processAudioFile(sanitizedName, file);
+};
+
+// ❌ Avoid: No validation
+const badFileUpload = (file) => {
+  // Direct processing without validation
+  processFile(file);
+};
+```
+
+### Error Handling Rules
+
+```typescript
+// ✅ Good: Proper error boundaries and handling
+export class AudioErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Log error details
+    console.error("Audio processing error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Audio processing failed. Please refresh and try again.</div>;
+    }
+
+    return this.props.children;
+  }
+}
+
+// ❌ Avoid: Silent failures
+try {
+  // Risky operation
+} catch (e) {
+  // Silently ignored
+}
+```
+
+## Automation Preferences
+
+### Auto-fix Rules
+
+- Fix import ordering automatically
+- Remove unused imports
+- Fix basic linting issues (spacing, semicolons)
+- Add missing TypeScript types where inferable
+
+### Suggestions (Not Auto-fix)
+
+- Suggest component refactoring when >300 lines
+- Recommend extracting duplicate logic into hooks
+- Suggest security improvements for audio handling
+- Recommend accessibility improvements for voice controls
+
+### Formatting
+
+- Follow existing ESLint configuration
+- Maintain consistent import ordering
+- Use 2-space indentation
+- Add trailing commas in multiline objects/arrays
+
+## File Structure Enforcement
+
+### Directory Structure
+
+```
+src/
+├── components/
+│   ├── chat/        # Chat-related components
+│   ├── voice/       # Voice interaction components
+│   ├── ui/         # Reusable UI components
+│   ├── settings/   # Configuration components
+│   └── tts/        # Text-to-speech components
+├── hooks/          # Custom React hooks
+├── state/          # Recoil state management
+├── lib/           # Utilities and SDK wrappers
+├── pages/         # Page-level components
+└── styles/        # Global styles
+```
+
+### Naming Conventions
+
+- **Components**: PascalCase (e.g., `VoiceControls.tsx`)
+- **Hooks**: camelCase starting with 'use' (e.g., `useAudioRecording.ts`)
+- **Utils**: camelCase (e.g., `audioUtils.ts`)
+- **Types**: PascalCase (e.g., `AudioConfig.ts`)
+- **CSS**: camelCase (e.g., `voiceControls.css`)
+
+## Integration Guidelines
+
+### API Integration
+
+- Use environment variables for API endpoints
+- Implement proper retry logic for network failures
+- Handle rate limiting gracefully
+- Log API errors for debugging
+
+### Real-time Features
+
+- Implement proper WebSocket connection management
+- Handle connection drops and reconnections
+- Buffer audio data during connection issues
+- Provide user feedback for connection status
+
+### Testing Considerations
+
+- Mock audio APIs for unit tests
+- Test error scenarios and edge cases
+- Verify accessibility features
+- Test across different browsers and devices
+
+## Browser Testing Protocol
+
+### Automatic Browser Testing
+
+After each significant code change or fix:
+
+1. **Start Development Server**: Ensure `npm run dev` is running on `http://localhost:3000/`
+2. **Navigate to Application**: Use browser automation to load the application
+3. **Verify Core Functionality**:
+   - Check that the main UI loads without errors
+   - Test voice recording functionality if audio-related changes
+   - Verify chat interface responsiveness
+   - Confirm file upload features work correctly
+4. **Accessibility Testing**: Verify ARIA labels and keyboard navigation
+5. **Cross-browser Testing**: Test on Chrome, Firefox, Safari, and Edge
+
+### Browser Test Scenarios
+
+```typescript
+// Example browser testing sequence for audio fixes:
+1. Navigate to http://localhost:3000/
+2. Verify microphone button is visible and clickable
+3. Test microphone permission flow
+4. Verify audio waveform visualization loads
+5. Test voice recording start/stop functionality
+6. Check audio playback for TTS features
+7. Verify error handling for failed audio operations
+```
+
+### MCP Browser Testing Tools
+
+The following MCP browser tools are available for automated testing:
+
+#### Navigation & Control
+
+- `mcp_browsermcp_browser_navigate` - Navigate to a URL
+- `mcp_browsermcp_browser_go_back` - Go back to previous page
+- `mcp_browsermcp_browser_go_forward` - Go forward to next page
+- `mcp_browsermcp_browser_wait` - Wait for specified time in seconds
+
+#### Element Interaction
+
+- `mcp_browsermcp_browser_click` - Click on elements
+- `mcp_browsermcp_browser_hover` - Hover over elements
+- `mcp_browsermcp_browser_type` - Type text into input fields
+- `mcp_browsermcp_browser_select_option` - Select dropdown options
+- `mcp_browsermcp_browser_press_key` - Press keyboard keys
+
+#### Inspection & Debugging
+
+- `mcp_browsermcp_browser_snapshot` - Capture page snapshot for element inspection
+- `mcp_browsermcp_browser_get_console_logs` - Get browser console logs
+- `mcp_browsermcp_browser_screenshot` - Take screenshot of current page
+
+### Testing Commands
+
+Use the following browser automation sequence for comprehensive testing:
+
+```javascript
+// Navigate to application
+mcp_browsermcp_browser_navigate({
+  url: "http://localhost:3000/",
+});
+
+// Wait for page load and take snapshot
+mcp_browsermcp_browser_wait({ time: 2 });
+const snapshot = mcp_browsermcp_browser_snapshot();
+
+// Test voice controls visibility
+mcp_browsermcp_browser_click({
+  element: "VoiceControls microphone button",
+  ref: snapshot.find_element_ref("VoiceControls"),
+});
+
+// Test microphone button interaction
+const micButtonRef = snapshot.find_element_ref(".voice-controls__mic-button");
+mcp_browsermcp_browser_click({
+  element: "Microphone button",
+  ref: micButtonRef,
+});
+
+// Test configuration dialog access
+mcp_browsermcp_browser_click({
+  element: "Configuration button",
+  ref: snapshot.find_element_ref_by_text("Config"),
+});
+
+// Wait for dialog to open and verify settings
+mcp_browsermcp_browser_wait({ time: 1 });
+const apiKeyInputRef = snapshot.find_element_ref("input[placeholder*='API']");
+if (apiKeyInputRef) {
+  console.log("✅ API key input found");
+} else {
+  console.error("❌ API key input not found");
+}
+```
+
+### Advanced Testing Scenarios
+
+```javascript
+// Test voice recording functionality
+async function testVoiceRecording() {
+  // Navigate and wait for load
+  await mcp_browsermcp_browser_navigate({ url: "http://localhost:3000/" });
+  await mcp_browsermcp_browser_wait({ time: 2 });
+
+  // Take initial snapshot
+  const snapshot = mcp_browsermcp_browser_snapshot();
+
+  // Find and click microphone button
+  const micButtonRef = snapshot.find_element_ref(".voice-controls__mic-button");
+  await mcp_browsermcp_browser_click({
+    element: "Microphone button to start recording",
+    ref: micButtonRef,
+  });
+
+  // Wait for recording state and verify waveform
+  await mcp_browsermcp_browser_wait({ time: 3 });
+  const recordingSnapshot = mcp_browsermcp_browser_snapshot();
+
+  // Check if waveform is visible
+  const waveformRef = recordingSnapshot.find_element_ref(".voice-waveform");
+  if (waveformRef) {
+    console.log("✅ Voice waveform visualization is active");
+  }
+
+  // Test TTS playback
+  const ttsButtonRef = recordingSnapshot.find_element_ref(
+    ".tts-playback-button"
+  );
+  if (ttsButtonRef) {
+    await mcp_browsermcp_browser_click({
+      element: "TTS playback button",
+      ref: ttsButtonRef,
+    });
+  }
+
+  // Get console logs to check for errors
+  const consoleLogs = mcp_browsermcp_browser_get_console_logs();
+  consoleLogs.forEach((log) => {
+    if (log.level === "error") {
+      console.error("Browser error:", log.message);
+    }
+  });
+}
+
+// Test file upload functionality
+async function testFileUpload() {
+  await mcp_browsermcp_browser_navigate({ url: "http://localhost:3000/" });
+  await mcp_browsermcp_browser_wait({ time: 2 });
+
+  const snapshot = mcp_browsermcp_browser_snapshot();
+  const uploadZoneRef = snapshot.find_element_ref(".upload-dropzone");
+
+  if (uploadZoneRef) {
+    // Simulate file drop (would need actual file in real scenario)
+    await mcp_browsermcp_browser_click({
+      element: "File upload dropzone",
+      ref: uploadZoneRef,
+    });
+  }
+}
+
+// Test error handling
+async function testErrorScenarios() {
+  // Test with invalid API key
+  await mcp_browsermcp_browser_navigate({ url: "http://localhost:3000/" });
+  await mcp_browsermcp_browser_wait({ time: 2 });
+
+  const snapshot = mcp_browsermcp_browser_snapshot();
+  const configButtonRef = snapshot.find_element_ref_by_text("Config");
+
+  if (configButtonRef) {
+    await mcp_browsermcp_browser_click({
+      element: "Configuration button",
+      ref: configButtonRef,
+    });
+
+    await mcp_browsermcp_browser_wait({ time: 1 });
+
+    // Try to interact with voice controls without API key
+    const micButtonRef = snapshot.find_element_ref(
+      ".voice-controls__mic-button"
+    );
+    await mcp_browsermcp_browser_click({
+      element: "Microphone button (should show error)",
+      ref: micButtonRef,
+    });
+
+    // Check console logs for error messages
+    const logs = mcp_browsermcp_browser_get_console_logs();
+    const errorLogs = logs.filter((log) => log.level === "error");
+    console.log(`Found ${errorLogs.length} errors during test`);
+  }
+}
+```
+
+### Error Detection
+
+If any browser tests fail:
+
+1. Capture console errors and warnings
+2. Take screenshot of failure state
+3. Log network requests and responses
+4. Verify audio context and microphone permissions
+5. Check for JavaScript runtime errors
