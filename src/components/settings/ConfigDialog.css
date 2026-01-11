@@ -676,3 +676,177 @@ div[data-radix-dialog-overlay],
     gap: 0.75rem;
   }
 }
+/* Environment Selection Header with Input */
+.config-dialog__section-header--with-input {
+  padding-bottom: 0.5rem;
+}
+
+.config-dialog__header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.config-dialog__header-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.config-dialog__label--compact-horizontal {
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 0 !important;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.config-dialog__input--compact {
+  height: 1.75rem !important;
+  width: 120px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: #000000 !important;
+  padding: 0 0.5rem !important;
+  border: 1px solid #000000 !important;
+  background: white !important;
+}
+
+.config-dialog__input--compact::placeholder {
+  color: #9ca3af !important;
+}
+
+.config-dialog__input-actions-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.config-dialog__input-actions {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  z-index: 10;
+}
+
+.config-dialog__input {
+  padding-right: 4.5rem !important; /* Default for 2 buttons */
+}
+
+/* Specific padding for single button case */
+.config-dialog__input:only-child,
+.config-dialog__input-actions-container > .config-dialog__input:not(:has(+ .config-dialog__input-actions > :nth-child(2))),
+.config-dialog__input-actions-container > .config-dialog__input--compact:not(:has(+ .config-dialog__input-actions > :nth-child(2))) {
+  padding-right: 2.25rem !important;
+}
+
+.config-dialog__input-actions-container > .config-dialog__input--compact:has(+ .config-dialog__input-actions > :nth-child(2)) {
+  padding-right: 4rem !important;
+}
+
+.config-dialog__field-reset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: none !important;
+  border-radius: 0.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.config-dialog__field-reset-button:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.config-dialog__reset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: none !important;
+  border-radius: 0.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.config-dialog__reset-button:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Field Row for side-by-side label and content */
+.config-dialog__field-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.config-dialog__label--compact {
+  margin-bottom: 0 !important;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* Environment URL Display */
+.config-dialog__url-display-container {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #f3f4f6;
+  max-width: 100%;
+}
+
+.config-dialog__url-text {
+  font-size: 0.8125rem;
+  color: #374151;
+  word-break: break-all;
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.4;
+}
+
+.config-dialog__copy-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: none !important;
+  border-radius: 0.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.config-dialog__copy-button:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.config-dialog__copy-icon--success {
+  color: #10b981;
+}

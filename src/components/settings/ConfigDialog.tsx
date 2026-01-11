@@ -18,12 +18,58 @@ import {
   type SettingsState,
   type VadConfig,
   type SchemaValues,
+  PREDEFINED_WORKFLOW_IDS,
+  DEFAULT_CONNECTION_SETTINGS,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useSTT } from "@/hooks/useSTT";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
+import {
+  Copy,
+  Check,
+  RotateCcw,
+} from "lucide-react";
 import "./ConfigDialog.css";
+
+// Helper component for copying to clipboard
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+      const displayValue = value.length > 20 
+        ? `${value.substring(0, 10)}...${value.substring(value.length - 5)}`
+        : value;
+      
+      toast.success(`Copied: ${displayValue}`);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="config-dialog__copy-button"
+      title="Copy to clipboard"
+      type="button"
+    >
+      {copied ? (
+        <Check size={14} className="config-dialog__copy-icon--success" />
+      ) : (
+        <Copy size={14} />
+      )}
+    </button>
+  );
+}
 
 const STT_LANGUAGES: { value: STTLanguageCode; label: string }[] = [
   { value: "en_US", label: "English (US)" },
@@ -202,6 +248,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         environment: newEnvironment,
       };
 
+      // Auto-fill workflowId if it's empty in the new environment
+      // (This handles the case where it wasn't set in previous state)
+      if (!newSettings[newEnvironment].connection.workflowId) {
+        newSettings[newEnvironment].connection = {
+          ...newSettings[newEnvironment].connection,
+          workflowId: PREDEFINED_WORKFLOW_IDS[newEnvironment as keyof typeof PREDEFINED_WORKFLOW_IDS],
+        };
+      }
+
       // Only update local temp settings - don't update global state yet
       console.log("ConfigDialog: Switching environment to", newEnvironment);
       console.log("ConfigDialog: New temp settings:", newSettings);
@@ -281,6 +336,36 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
     };
   }, [open, onOpenChange]);
 
+  const handleResetConnection = () => {
+    const currentEnv = tempSettings.environment;
+    setTempSettings({
+      ...tempSettings,
+      [currentEnv]: {
+        ...tempSettings[currentEnv],
+        connection: {
+          ...tempSettings[currentEnv].connection,
+          ...DEFAULT_CONNECTION_SETTINGS[currentEnv],
+        },
+      },
+    });
+    toast.success("Settings reset to defaults");
+  };
+
+  const handleResetWorkflowId = () => {
+    const currentEnv = tempSettings.environment;
+    setTempSettings({
+      ...tempSettings,
+      [currentEnv]: {
+        ...tempSettings[currentEnv],
+        connection: {
+          ...tempSettings[currentEnv].connection,
+          workflowId: PREDEFINED_WORKFLOW_IDS[currentEnv as keyof typeof PREDEFINED_WORKFLOW_IDS],
+        },
+      },
+    });
+    toast.success("Workflow ID reset to default");
+  };
+
   const handleSave = async () => {
     // Validate API key - use input value (tempSettings), not localStorage
     const currentEnv = tempSettings.environment;
@@ -289,27 +374,10 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       return;
     }
 
-    // Validate custom environment URLs
-    if (currentEnv === "custom") {
-      if (!tempSettings.custom.connection.baseUrl.trim()) {
-        toast.error("Base URL is required for custom environment");
-        return;
-      }
-      if (!tempSettings.custom.connection.authBaseUrl.trim()) {
-        toast.error("Auth URL is required for custom environment");
-        return;
-      }
-      // Basic URL validation
-      try {
-        new URL(tempSettings.custom.connection.baseUrl);
-      } catch {
-        toast.error("Base URL must be a valid URL");
-        return;
-      }
-      try {
-        new URL(tempSettings.custom.connection.authBaseUrl);
-      } catch {
-        toast.error("Auth URL must be a valid URL");
+    // Validate custom/prod environment URLs
+    if (currentEnv === "prod") {
+      if (!tempSettings.prod.connection.prefix?.trim()) {
+        toast.error("Prefix is required for PROD environment");
         return;
       }
     }
@@ -593,100 +661,95 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
               >
                 API Key / Access Token
               </Label>
-              <Input
-                id="api-key"
-                type="password"
-                value={tempSettings[tempSettings.environment].connection.apiKey}
-                onChange={(e) => {
-                  const newApiKey = e.target.value;
-                  console.log("[ConfigDialog] API key changed:", {
-                    hasValue: !!newApiKey,
-                    length: newApiKey.length,
-                    preview:
-                      newApiKey.substring(0, 10) +
-                      (newApiKey.length > 10 ? "..." : ""),
-                  });
-                  const currentEnv = tempSettings.environment;
-                  const updatedTempSettings = {
-                    ...tempSettings,
-                    [currentEnv]: {
-                      ...tempSettings[currentEnv],
-                      connection: {
-                        ...tempSettings[currentEnv].connection,
-                        apiKey: newApiKey,
+              <div className="config-dialog__input-actions-container">
+                <Input
+                  id="api-key"
+                  type="password"
+                  value={tempSettings[tempSettings.environment].connection.apiKey}
+                  onChange={(e) => {
+                    const newApiKey = e.target.value;
+                    const currentEnv = tempSettings.environment;
+                    const updatedTempSettings = {
+                      ...tempSettings,
+                      [currentEnv]: {
+                        ...tempSettings[currentEnv],
+                        connection: {
+                          ...tempSettings[currentEnv].connection,
+                          apiKey: newApiKey,
+                        },
                       },
-                    },
-                  };
-                  setTempSettings(updatedTempSettings);
+                    };
+                    setTempSettings(updatedTempSettings);
 
-                  // Always save API key to localStorage immediately
-                  const settingsToSave = {
-                    ...updatedTempSettings,
-                    [currentEnv]: {
-                      ...updatedTempSettings[currentEnv],
-                      stt: {
-                        ...updatedTempSettings[currentEnv].stt,
-                        rememberFlowid:
-                          updatedTempSettings[currentEnv].stt.rememberFlowid,
+                    // Always save API key to localStorage immediately
+                    const settingsToSave = {
+                      ...updatedTempSettings,
+                      [currentEnv]: {
+                        ...updatedTempSettings[currentEnv],
+                        stt: {
+                          ...updatedTempSettings[currentEnv].stt,
+                          rememberFlowid:
+                            updatedTempSettings[currentEnv].stt.rememberFlowid,
+                        },
                       },
-                    },
-                  };
-                  localStorage.setItem(
-                    "aiola-settings",
-                    JSON.stringify(settingsToSave)
-                  );
-                  setSettings(settingsToSave);
-                }}
-                placeholder="Enter your Aiola API key"
-                className="config-dialog__input"
-              />
+                    };
+                    localStorage.setItem(
+                      "aiola-settings",
+                      JSON.stringify(settingsToSave)
+                    );
+                    setSettings(settingsToSave);
+                  }}
+                  placeholder="Enter your Aiola API key"
+                  className="config-dialog__input"
+                />
+                <div className="config-dialog__input-actions">
+                  <CopyButton value={tempSettings[tempSettings.environment].connection.apiKey} />
+                </div>
+              </div>
             </div>
 
             <div className="config-dialog__field-group">
               <Label htmlFor="workflowId" className="config-dialog__label">
                 Workflow ID
               </Label>
-              <Input
-                id="workflowId"
-                value={
-                  tempSettings[tempSettings.environment].connection
-                    .workflowId || ""
-                }
-                onChange={(e) => {
-                  const newWorkflowId = e.target.value;
-                  console.log("[ConfigDialog] Workflow ID changed:", {
-                    from:
-                      tempSettings[tempSettings.environment].connection
-                        .workflowId || "",
-                    to: newWorkflowId,
-                    hasValue: !!newWorkflowId,
-                  });
-                  const currentEnv = tempSettings.environment;
-                  setTempSettings({
-                    ...tempSettings,
-                    [currentEnv]: {
-                      ...tempSettings[currentEnv],
-                      connection: {
-                        ...tempSettings[currentEnv].connection,
-                        workflowId: e.target.value,
+              <div className="config-dialog__input-actions-container">
+                <Input
+                  id="workflowId"
+                  value={
+                    tempSettings[tempSettings.environment].connection
+                      .workflowId || ""
+                  }
+                  onChange={(e) => {
+                    const currentEnv = tempSettings.environment;
+                    setTempSettings({
+                      ...tempSettings,
+                      [currentEnv]: {
+                        ...tempSettings[currentEnv],
+                        connection: {
+                          ...tempSettings[currentEnv].connection,
+                          workflowId: e.target.value,
+                        },
                       },
-                    },
-                  });
-                }}
-                placeholder="Enter workflow ID for STT processing"
-                className="config-dialog__input"
-              />
-              <p className="config-dialog__helper-text">
-                Optional: SDK will use default workflow if empty
-              </p>
-              {tempSettings.environment === "custom" && (
-                <p
-                  className="config-dialog__helper-text"
-                  style={{ marginTop: "0.5rem", fontStyle: "italic" }}
-                >
-                  Note: Default workflowId may not work with custom environments
-                </p>
-              )}
+                    });
+                  }}
+                  placeholder="Enter workflow ID for STT processing"
+                  className="config-dialog__input"
+                />
+                <div className="config-dialog__input-actions">
+                  <CopyButton value={tempSettings[tempSettings.environment].connection.workflowId || ""} />
+                  {tempSettings[tempSettings.environment].connection.workflowId !== PREDEFINED_WORKFLOW_IDS[tempSettings.environment as keyof typeof PREDEFINED_WORKFLOW_IDS] && (
+                    <button
+                      onClick={handleResetWorkflowId}
+                      className="config-dialog__field-reset-button"
+                      title="Reset to default workflow ID"
+                      type="button"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
             </div>
 
             <div className="config-dialog__field-group">
@@ -716,88 +779,92 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => switchEnvironment("custom")}
+                  onClick={() => switchEnvironment("stage")}
                   className={`config-dialog__toggle-button ${
-                    tempSettings.environment === "custom"
+                    tempSettings.environment === "stage"
                       ? "config-dialog__toggle-button--active"
                       : ""
                   }`}
                 >
-                  Custom
+                  Stage
                 </button>
               </div>
               <p className="config-dialog__helper-text">
-                Select the API environment: Production, Development, or Custom
+                Select the API environment: Production, Development, or Stage
               </p>
             </div>
 
-            {tempSettings.environment === "custom" && (
-              <>
-                <div className="config-dialog__field-group">
-                  <Label
-                    htmlFor="custom-base-url"
-                    className="config-dialog__label config-dialog__label--required"
-                  >
-                    Base URL
-                  </Label>
-                  <Input
-                    id="custom-base-url"
-                    type="url"
-                    value={tempSettings.custom.connection.baseUrl}
-                    onChange={(e) => {
-                      const newBaseUrl = e.target.value;
-                      setTempSettings({
-                        ...tempSettings,
-                        custom: {
-                          ...tempSettings.custom,
-                          connection: {
-                            ...tempSettings.custom.connection,
-                            baseUrl: newBaseUrl,
-                          },
-                        },
-                      });
-                    }}
-                    placeholder="https://your-api.example.com"
-                    className="config-dialog__input"
-                  />
-                  <p className="config-dialog__helper-text">
-                    Enter the base URL for your custom API environment
-                  </p>
-                </div>
 
-                <div className="config-dialog__field-group">
-                  <Label
-                    htmlFor="custom-auth-url"
-                    className="config-dialog__label config-dialog__label--required"
-                  >
-                    Auth URL
-                  </Label>
-                  <Input
-                    id="custom-auth-url"
-                    type="url"
-                    value={tempSettings.custom.connection.authBaseUrl}
-                    onChange={(e) => {
-                      const newAuthBaseUrl = e.target.value;
-                      setTempSettings({
-                        ...tempSettings,
-                        custom: {
-                          ...tempSettings.custom,
-                          connection: {
-                            ...tempSettings.custom.connection,
-                            authBaseUrl: newAuthBaseUrl,
-                          },
-                        },
-                      });
-                    }}
-                    placeholder="https://your-auth.example.com"
-                    className="config-dialog__input"
-                  />
-                  <p className="config-dialog__helper-text">
-                    Enter the authentication URL for your custom API environment
-                  </p>
+
+            <div className="config-dialog__section-header config-dialog__section-header--with-input" style={{ marginTop: "1.5rem", borderBottom: "2px solid #e5e7eb" }}>
+              <div className="config-dialog__header-title-group">
+                <h4 className="config-dialog__section-title" style={{ fontSize: "0.85rem", marginBottom: 0 }}>Environment URLs</h4>
+                
+                {tempSettings.environment === "prod" && (
+                  <div className="config-dialog__header-input-group">
+                    <Label htmlFor="prod-prefix" className="config-dialog__label--compact-horizontal">Prefix:</Label>
+                    <div className="config-dialog__input-actions-container">
+                      <Input
+                        id="prod-prefix"
+                        value={tempSettings.prod.connection.prefix || ""}
+                        onChange={(e) => {
+                          const prefix = e.target.value;
+                          const baseUrl = prefix ? `https://${prefix}-api.aiola.ai` : "https://apis.aiola.ai";
+                          const authBaseUrl = prefix ? `https://${prefix}-auth.aiola.ai` : "https://auth.aiola.ai";
+                          
+                          setTempSettings({
+                            ...tempSettings,
+                            prod: {
+                              ...tempSettings.prod,
+                              connection: {
+                                ...tempSettings.prod.connection,
+                                prefix,
+                                baseUrl,
+                                authBaseUrl,
+                              },
+                            },
+                          });
+                        }}
+                        placeholder="e.g. pg-vp2"
+                        className="config-dialog__input--compact"
+                      />
+                      {tempSettings.prod.connection.prefix && (
+                        <div className="config-dialog__input-actions">
+                          <button
+                            onClick={handleResetConnection}
+                            className="config-dialog__reset-button"
+                            title="Clear prefix and reset defaults"
+                            type="button"
+                          >
+                            <RotateCcw size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="config-dialog__field-row" style={{ marginTop: "1rem" }}>
+              <Label className="config-dialog__label config-dialog__label--compact">Base URL</Label>
+              <div className="config-dialog__url-display-container">
+                <div className="config-dialog__url-text">
+                  {tempSettings[tempSettings.environment].connection.baseUrl}
                 </div>
-              </>
-            )}
+                <CopyButton value={tempSettings[tempSettings.environment].connection.baseUrl} />
+              </div>
+            </div>
+
+            <div className="config-dialog__field-row">
+              <Label className="config-dialog__label config-dialog__label--compact">Auth URL</Label>
+              <div className="config-dialog__url-display-container">
+                <div className="config-dialog__url-text">
+                  {tempSettings[tempSettings.environment].connection.authBaseUrl}
+                </div>
+                <CopyButton value={tempSettings[tempSettings.environment].connection.authBaseUrl} />
+              </div>
+            </div>
           </section>
 
           {/* STT Section */}
