@@ -1,6 +1,8 @@
 import { atom, useRecoilState, selector } from "recoil";
 import { useEffect } from "react";
 
+export const APP_VERSION = "0.3.0";
+
 // VAD Configuration interface
 export interface VadConfig {
   threshold?: number;
@@ -25,10 +27,17 @@ export type STTLanguageCode =
   | "ko_KR"
   | "zh_CN";
 
+// Predefined Workflow IDs
+export const PREDEFINED_WORKFLOW_IDS = {
+  prod: "24dcc04c-2003-4d39-9854-c276f8e709fc",
+  dev: "9e153c70-288b-47a5-97a7-1f91273c2420",
+  stage: "885417c8-666a-4a6d-a6d2-1ab97656021e",
+};
+
 //TODO get form aiOla SDK
 export type TTSVoice = "en_us_female";
 
-export type Environment = "prod" | "dev" | "custom";
+export type Environment = "prod" | "dev" | "stage";
 
 export interface SettingsState {
   environment: Environment;
@@ -38,6 +47,7 @@ export interface SettingsState {
       baseUrl: string;
       authBaseUrl: string;
       workflowId?: string;
+      prefix?: string;
     };
     stt: {
       language: STTLanguageCode;
@@ -70,7 +80,7 @@ export interface SettingsState {
       language: "en";
     };
   };
-  custom: {
+  stage: {
     connection: {
       apiKey: string;
       baseUrl: string;
@@ -91,16 +101,34 @@ export interface SettingsState {
   };
 }
 
+// Hardcoded connection defaults for each environment
+export const DEFAULT_CONNECTION_SETTINGS: Record<Environment, SettingsState["prod"]["connection"]> = {
+  prod: {
+    apiKey: "",
+    baseUrl: "https://apis.aiola.ai",
+    authBaseUrl: "https://auth.aiola.ai",
+    workflowId: PREDEFINED_WORKFLOW_IDS.prod,
+    prefix: "",
+  },
+  dev: {
+    apiKey: "",
+    baseUrl: "https://dev-vp1-api.internal.aiola.ai",
+    authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
+    workflowId: PREDEFINED_WORKFLOW_IDS.dev,
+  },
+  stage: {
+    apiKey: "",
+    baseUrl: "https://stg-vp1-api.aiola.ai",
+    authBaseUrl: "https://stg-vp1-auth.aiola.ai",
+    workflowId: PREDEFINED_WORKFLOW_IDS.stage,
+  },
+};
+
 // Default settings
 const defaultSettings: SettingsState = {
   environment: "prod",
   prod: {
-    connection: {
-      apiKey: "",
-      baseUrl: "https://apis.aiola.ai",
-      authBaseUrl: "https://auth.aiola.ai",
-      workflowId: "",
-    },
+    connection: DEFAULT_CONNECTION_SETTINGS.prod,
     stt: {
       language: "en_US",
       keywords: [],
@@ -114,12 +142,7 @@ const defaultSettings: SettingsState = {
     },
   },
   dev: {
-    connection: {
-      apiKey: "",
-      baseUrl: "https://dev-vp1-api.internal.aiola.ai",
-      authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
-      workflowId: "",
-    },
+    connection: DEFAULT_CONNECTION_SETTINGS.dev,
     stt: {
       language: "en_US",
       keywords: [],
@@ -132,13 +155,8 @@ const defaultSettings: SettingsState = {
       language: "en",
     },
   },
-  custom: {
-    connection: {
-      apiKey: "",
-      baseUrl: "",
-      authBaseUrl: "",
-      workflowId: "",
-    },
+  stage: {
+    connection: DEFAULT_CONNECTION_SETTINGS.stage,
     stt: {
       language: "en_US",
       keywords: [],
@@ -180,7 +198,7 @@ function loadSettingsFromStorage(): SettingsState {
               apiKey: parsed.connection.apiKey || "",
               baseUrl: "https://apis.aiola.ai",
               authBaseUrl: "https://auth.aiola.ai",
-              workflowId: parsed.stt?.flowid || "",
+              workflowId: PREDEFINED_WORKFLOW_IDS.prod,
             },
             stt: {
               language: parsed.stt?.language || "en_US",
@@ -196,10 +214,10 @@ function loadSettingsFromStorage(): SettingsState {
           },
           dev: {
             connection: {
-              apiKey: "", // Dev API key starts empty
+              apiKey: "",
               baseUrl: "https://dev-vp1-api.internal.aiola.ai",
               authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
-              workflowId: "",
+              workflowId: PREDEFINED_WORKFLOW_IDS.dev,
             },
             stt: {
               language: "en_US",
@@ -213,12 +231,12 @@ function loadSettingsFromStorage(): SettingsState {
               language: "en",
             },
           },
-          custom: {
+          stage: {
             connection: {
               apiKey: "",
-              baseUrl: "",
-              authBaseUrl: "",
-              workflowId: "",
+              baseUrl: "https://stg-vp1-api.aiola.ai",
+              authBaseUrl: "https://stg-vp1-auth.aiola.ai",
+              workflowId: PREDEFINED_WORKFLOW_IDS.stage,
             },
             stt: {
               language: "en_US",
@@ -322,6 +340,7 @@ function loadSettingsFromStorage(): SettingsState {
           connection: {
             ...defaultSettings.prod.connection,
             ...(parsed.prod?.connection || {}),
+            workflowId: parsed.prod?.connection?.workflowId || defaultSettings.prod.connection.workflowId,
           },
           stt: {
             ...defaultSettings.prod.stt,
@@ -335,6 +354,7 @@ function loadSettingsFromStorage(): SettingsState {
           connection: {
             ...defaultSettings.dev.connection,
             ...(parsed.dev?.connection || {}),
+            workflowId: parsed.dev?.connection?.workflowId || defaultSettings.dev.connection.workflowId,
           },
           stt: {
             ...defaultSettings.dev.stt,
@@ -342,17 +362,18 @@ function loadSettingsFromStorage(): SettingsState {
             schemaValues: parsed.dev?.stt?.schemaValues || {},
           },
         },
-        custom: {
-          ...defaultSettings.custom,
-          ...(parsed.custom || {}),
+        stage: {
+          ...defaultSettings.stage,
+          ...(parsed.stage || parsed.custom || {}),
           connection: {
-            ...defaultSettings.custom.connection,
-            ...(parsed.custom?.connection || {}),
+            ...defaultSettings.stage.connection,
+            ...(parsed.stage?.connection || parsed.custom?.connection || {}),
+            workflowId: (parsed.stage?.connection || parsed.custom?.connection)?.workflowId || defaultSettings.stage.connection.workflowId,
           },
           stt: {
-            ...defaultSettings.custom.stt,
-            ...(parsed.custom?.stt || {}),
-            schemaValues: parsed.custom?.stt?.schemaValues || {},
+            ...defaultSettings.stage.stt,
+            ...(parsed.stage?.stt || parsed.custom?.stt || {}),
+            schemaValues: parsed.stage?.stt?.schemaValues || parsed.custom?.stt?.schemaValues || {},
           },
         },
       };
