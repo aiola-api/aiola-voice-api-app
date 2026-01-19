@@ -141,14 +141,18 @@ export function useSTT() {
         // Settings changed or no cached connection - create new one
 
         const streamRequest: {
-          langCode: string;
+          langCode?: string;
           keywords: Record<string, string>;
           workflowId?: string;
           vadConfig?: VadConfig;
         } = {
-          langCode: currentSettingsObj.language,
           keywords: keywordsObj,
         };
+
+        // Add langCode only if not set to "default"
+        if (currentSettingsObj.language && currentSettingsObj.language !== "default") {
+          streamRequest.langCode = currentSettingsObj.language;
+        }
 
         // Add workflowId if present
         if (currentSettingsObj.workflowId) {
@@ -211,11 +215,18 @@ export function useSTT() {
         const client = await getClient();
         const currentSettings = getCurrentSettings(settings);
 
-        const transcription = await client.stt.transcribeFile({
+        const transcribeRequest: {
+          file: File;
+          language?: string;
+        } = {
           file,
-          language: currentSettings.stt.language,
-          // Note: flowid not supported in transcribeFile API
-        });
+        };
+
+        if (currentSettings.stt.language && currentSettings.stt.language !== "default") {
+          transcribeRequest.language = currentSettings.stt.language;
+        }
+
+        const transcription = await client.stt.transcribeFile(transcribeRequest);
 
         // Map SDK response to our interface
         return { text: transcription.transcript };
