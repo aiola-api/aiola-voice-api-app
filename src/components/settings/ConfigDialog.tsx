@@ -7,6 +7,12 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import {
   useSettingsWithPersistence,
 } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
@@ -222,6 +228,17 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       setIsTestingConnection(false);
     }
   };
+
+  // Lock body scroll when dialog is open
+  useEffect(() => {
+    if (open) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [open]);
 
   // Lock body scroll when dialog is open
   useEffect(() => {
