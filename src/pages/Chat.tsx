@@ -47,13 +47,6 @@ export function Chat() {
 
       {/* Main Content */}
       <div className="chat-page__main">
-        {/* Config Dialog - Absolutely positioned and centered */}
-        {showConfig && (
-          <Suspense fallback={<ComponentLoader />}>
-            <ConfigDialog open={showConfig} onOpenChange={setShowConfig} />
-          </Suspense>
-        )}
-
         {/* Messages Area */}
         <div className="chat-page__messages-area">
           <div className="chat-page__messages-container">
@@ -78,6 +71,13 @@ export function Chat() {
           </div>
         </div>
       </div>
+
+      {/* Config Dialog - Rendered at top level with position: fixed */}
+      {showConfig && (
+        <Suspense fallback={<ComponentLoader />}>
+          <ConfigDialog open={showConfig} onOpenChange={setShowConfig} />
+        </Suspense>
+      )}
     </div>
   );
 }

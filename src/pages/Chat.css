@@ -63,32 +63,3 @@
   right: 0.5rem;
   z-index: 15; /* Higher than messages but lower than config dialog */
 }
-
-/* Config Dialog Backdrop - Glass effect over messages */
-.chat-page__main > .config-dialog__container::before {
-  content: "";
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(3px) contrast(50%) !important;
-  -webkit-backdrop-filter: blur(3px) contrast(50%) !important;
-  z-index: 1 !important;
-  pointer-events: auto !important;
-  cursor: default !important;
-}
-
-/* Config Dialog Container - Absolutely positioned and centered */
-.chat-page__main > .config-dialog__container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 20 !important;
-}
