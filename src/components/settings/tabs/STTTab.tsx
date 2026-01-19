@@ -14,29 +14,19 @@ import {
   type SettingsState, 
   type STTLanguageCode, 
   type VadConfig, 
-  type SchemaValues 
+  type SchemaValues,
+  STT_LANGUAGES,
 } from "@/state/settings";
+import { type StreamConnection } from "@/state/connection";
 import { toast } from "sonner";
 
-export const STT_LANGUAGES: { value: STTLanguageCode; label: string }[] = [
-  { value: "default", label: "Default (Workflow)" },
-  { value: "en_US", label: "English (US)" },
-  { value: "en_GB", label: "English (UK)" },
-  { value: "es_ES", label: "Spanish (Spain)" },
-  { value: "fr_FR", label: "French (France)" },
-  { value: "de_DE", label: "German (Germany)" },
-  { value: "it_IT", label: "Italian (Italy)" },
-  { value: "pt_BR", label: "Portuguese (Brazil)" },
-  { value: "ja_JP", label: "Japanese (Japan)" },
-  { value: "ko_KR", label: "Korean (Korea)" },
-  { value: "zh_CN", label: "Chinese (China)" },
-];
+
 
 interface STTTabProps {
   tempSettings: SettingsState;
   setTempSettings: (settings: SettingsState) => void;
   isConnected: boolean;
-  createStreamConnection: () => Promise<any>;
+  createStreamConnection: () => Promise<StreamConnection>;
   onLanguageChange?: (value: STTLanguageCode) => void;
 }
 
@@ -61,7 +51,7 @@ export function STTTab({
     } else {
       setSchemaValuesRawText(JSON.stringify(schemaValues, null, 2));
     }
-  }, [tempSettings.environment]); // Only re-initialize when environment changes
+  }, [tempSettings]); // Only re-initialize when environment changes
 
   const validateSchemaValues = useCallback(
     (jsonText: string): { isValid: boolean; error: string | null; parsed?: SchemaValues } => {
@@ -129,7 +119,7 @@ export function STTTab({
       const connection = await createStreamConnection();
       const schemaValues = validation.parsed || {};
       if (Object.keys(schemaValues).length > 0) {
-        connection.setSchemaValues(schemaValues, (response: any) => {
+        connection.setSchemaValues(schemaValues, (response: { status: string; message?: string }) => {
           if (response.status === "ok") {
             toast.success("Schema values set successfully");
           } else {
