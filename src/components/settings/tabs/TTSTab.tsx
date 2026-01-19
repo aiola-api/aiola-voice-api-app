@@ -6,11 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type SettingsState, type TTSVoice } from "@/state/settings";
+import { type SettingsState, type TTSVoice, TTS_VOICES } from "@/state/settings";
 
-export const TTS_VOICES: { value: TTSVoice; label: string }[] = [
-  { value: "en_us_female", label: "English (US) - Female" },
-];
+
 
 interface TTSTabProps {
   tempSettings: SettingsState;

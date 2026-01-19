@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRecoilValue } from "recoil";
 import WaveSurfer from "wavesurfer.js";
 import { conversationState } from "@/state/conversation";
@@ -39,7 +39,7 @@ export function VoiceWaveform({
   const currentMessage = messageId
     ? conversation.messages.find((msg) => msg.id === messageId)
     : null;
-  const amplitudeHistory = currentMessage?.amplitudeHistory || [];
+  const amplitudeHistory = useMemo(() => currentMessage?.amplitudeHistory || [], [currentMessage?.amplitudeHistory]);
 
   useEffect(() => {
     if (!containerRef.current) return;

@@ -65,7 +65,7 @@ export function AudioLevelMeter({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isActive]);
+  }, [isActive, level]);
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
