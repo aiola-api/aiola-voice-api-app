@@ -16,6 +16,7 @@ export type SchemaValues = Record<string, (string | number)[]>;
 
 //TODO get form aiOla SDK
 export type STTLanguageCode =
+  | "default"
   | "en_US"
   | "en_GB"
   | "es_ES"

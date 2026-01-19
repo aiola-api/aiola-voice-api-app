@@ -40,6 +40,7 @@ const STT_LANGUAGES: {
   label: string;
   shortLabel: string;
 }[] = [
+  { value: "default", label: "Default (Workflow)", shortLabel: "DEF" },
   { value: "en_US", label: "English (US)", shortLabel: "EN" },
   { value: "en_GB", label: "English (UK)", shortLabel: "EN" },
   { value: "es_ES", label: "Spanish (Spain)", shortLabel: "ES" },
