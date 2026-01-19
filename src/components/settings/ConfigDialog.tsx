@@ -11,6 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import {
   useSettingsWithPersistence,
   type STTLanguageCode,
   type TTSVoice,
@@ -613,6 +619,17 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
     }
   };
 
+  // Lock body scroll when dialog is open
+  useEffect(() => {
+    if (open) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -645,372 +662,89 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         </div>
 
         <div className="config-dialog__main">
-          {/* Connection Section */}
-          <section className="config-dialog__section">
-            <div className="config-dialog__section-header">
-              <h3 className="config-dialog__section-title">Connection</h3>
-              <p className="config-dialog__section-subtitle">
-                Configure your Aiola API connection and authentication
-              </p>
+          <Tabs defaultValue="connect" className="config-dialog__tabs">
+            <div className="config-dialog__tabs-container">
+              <TabsList className="config-dialog__tabs-list">
+                <TabsTrigger value="connect" className="config-dialog__tabs-trigger">Connect</TabsTrigger>
+                <TabsTrigger value="stt" className="config-dialog__tabs-trigger">Speech-to-Text</TabsTrigger>
+                <TabsTrigger value="tts" className="config-dialog__tabs-trigger">Text-to-Speech</TabsTrigger>
+              </TabsList>
             </div>
 
-            <div className="config-dialog__field-group">
-              <Label
-                htmlFor="api-key"
-                className="config-dialog__label config-dialog__label--required"
-              >
-                API Key / Access Token
-              </Label>
-              <div className="config-dialog__input-actions-container">
-                <Input
-                  id="api-key"
-                  type="password"
-                  value={tempSettings[tempSettings.environment].connection.apiKey}
-                  onChange={(e) => {
-                    const newApiKey = e.target.value;
-                    const currentEnv = tempSettings.environment;
-                    const updatedTempSettings = {
-                      ...tempSettings,
-                      [currentEnv]: {
-                        ...tempSettings[currentEnv],
-                        connection: {
-                          ...tempSettings[currentEnv].connection,
-                          apiKey: newApiKey,
-                        },
-                      },
-                    };
-                    setTempSettings(updatedTempSettings);
-
-                    // Always save API key to localStorage immediately
-                    const settingsToSave = {
-                      ...updatedTempSettings,
-                      [currentEnv]: {
-                        ...updatedTempSettings[currentEnv],
-                        stt: {
-                          ...updatedTempSettings[currentEnv].stt,
-                          rememberFlowid:
-                            updatedTempSettings[currentEnv].stt.rememberFlowid,
-                        },
-                      },
-                    };
-                    localStorage.setItem(
-                      "aiola-settings",
-                      JSON.stringify(settingsToSave)
-                    );
-                    setSettings(settingsToSave);
-                  }}
-                  placeholder="Enter your Aiola API key"
-                  className="config-dialog__input"
-                />
-                <div className="config-dialog__input-actions">
-                  <CopyButton value={tempSettings[tempSettings.environment].connection.apiKey} />
+            {/* Connection Section */}
+            <TabsContent value="connect">
+              <section className="config-dialog__section">
+                <div className="config-dialog__section-header">
+                  <h3 className="config-dialog__section-title">Connection</h3>
+                  <p className="config-dialog__section-subtitle">
+                    Configure your Aiola API connection and authentication
+                  </p>
                 </div>
-              </div>
-            </div>
 
-            <div className="config-dialog__field-group">
-              <Label htmlFor="workflowId" className="config-dialog__label">
-                Workflow ID
-              </Label>
-              <div className="config-dialog__input-actions-container">
-                <Input
-                  id="workflowId"
-                  value={
-                    tempSettings[tempSettings.environment].connection
-                      .workflowId || ""
-                  }
-                  onChange={(e) => {
-                    const currentEnv = tempSettings.environment;
-                    setTempSettings({
-                      ...tempSettings,
-                      [currentEnv]: {
-                        ...tempSettings[currentEnv],
-                        connection: {
-                          ...tempSettings[currentEnv].connection,
-                          workflowId: e.target.value,
-                        },
-                      },
-                    });
-                  }}
-                  placeholder="Enter workflow ID for STT processing"
-                  className="config-dialog__input"
-                />
-                <div className="config-dialog__input-actions">
-                  <CopyButton value={tempSettings[tempSettings.environment].connection.workflowId || ""} />
-                  {tempSettings[tempSettings.environment].connection.workflowId !== PREDEFINED_WORKFLOW_IDS[tempSettings.environment as keyof typeof PREDEFINED_WORKFLOW_IDS] && (
-                    <button
-                      onClick={handleResetWorkflowId}
-                      className="config-dialog__field-reset-button"
-                      title="Reset to default workflow ID"
-                      type="button"
-                    >
-                      <RotateCcw size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-            </div>
-
-            <div className="config-dialog__field-group">
-              <Label className="config-dialog__label">Environment</Label>
-              <div className="config-dialog__toggle-container">
-                <button
-                  type="button"
-                  onClick={() => switchEnvironment("prod")}
-                  className={`config-dialog__toggle-button ${
-                    tempSettings.environment === "prod"
-                      ? "config-dialog__toggle-button--active"
-                      : ""
-                  }`}
-                >
-                  Prod
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchEnvironment("dev")}
-                  className={`config-dialog__toggle-button ${
-                    tempSettings.environment === "dev"
-                      ? "config-dialog__toggle-button--active"
-                      : ""
-                  }`}
-                >
-                  Dev
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchEnvironment("stage")}
-                  className={`config-dialog__toggle-button ${
-                    tempSettings.environment === "stage"
-                      ? "config-dialog__toggle-button--active"
-                      : ""
-                  }`}
-                >
-                  Stage
-                </button>
-              </div>
-              <p className="config-dialog__helper-text">
-                Select the API environment: Production, Development, or Stage
-              </p>
-            </div>
-
-
-
-            <div className="config-dialog__section-header config-dialog__section-header--with-input" style={{ marginTop: "1.5rem", borderBottom: "2px solid #e5e7eb" }}>
-              <div className="config-dialog__header-title-group">
-                <h4 className="config-dialog__section-title" style={{ fontSize: "0.85rem", marginBottom: 0 }}>Environment URLs</h4>
-                
-                {tempSettings.environment === "prod" && (
-                  <div className="config-dialog__header-input-group">
-                    <Label htmlFor="prod-prefix" className="config-dialog__label--compact-horizontal">Prefix:</Label>
-                    <div className="config-dialog__input-actions-container">
-                      <Input
-                        id="prod-prefix"
-                        value={tempSettings.prod.connection.prefix || ""}
-                        onChange={(e) => {
-                          const prefix = e.target.value;
-                          const baseUrl = prefix ? `https://${prefix}-api.aiola.ai` : "https://apis.aiola.ai";
-                          const authBaseUrl = prefix ? `https://${prefix}-auth.aiola.ai` : "https://auth.aiola.ai";
-                          
-                          setTempSettings({
-                            ...tempSettings,
-                            prod: {
-                              ...tempSettings.prod,
-                              connection: {
-                                ...tempSettings.prod.connection,
-                                prefix,
-                                baseUrl,
-                                authBaseUrl,
-                              },
+                <div className="config-dialog__field-group">
+                  <Label
+                    htmlFor="api-key"
+                    className="config-dialog__label config-dialog__label--required"
+                  >
+                    API Key / Access Token
+                  </Label>
+                  <div className="config-dialog__input-actions-container">
+                    <Input
+                      id="api-key"
+                      type="password"
+                      value={tempSettings[tempSettings.environment].connection.apiKey}
+                      onChange={(e) => {
+                        const newApiKey = e.target.value;
+                        const currentEnv = tempSettings.environment;
+                        const updatedTempSettings = {
+                          ...tempSettings,
+                          [currentEnv]: {
+                            ...tempSettings[currentEnv],
+                            connection: {
+                              ...tempSettings[currentEnv].connection,
+                              apiKey: newApiKey,
                             },
-                          });
-                        }}
-                        placeholder="e.g. pg-vp2"
-                        className="config-dialog__input--compact"
-                      />
-                      {tempSettings.prod.connection.prefix && (
-                        <div className="config-dialog__input-actions">
-                          <button
-                            onClick={handleResetConnection}
-                            className="config-dialog__reset-button"
-                            title="Clear prefix and reset defaults"
-                            type="button"
-                          >
-                            <RotateCcw size={14} />
-                          </button>
-                        </div>
-                      )}
+                          },
+                        };
+                        setTempSettings(updatedTempSettings);
+
+                        // Always save API key to localStorage immediately
+                        const settingsToSave = {
+                          ...updatedTempSettings,
+                          [currentEnv]: {
+                            ...updatedTempSettings[currentEnv],
+                            stt: {
+                              ...updatedTempSettings[currentEnv].stt,
+                              rememberFlowid:
+                                updatedTempSettings[currentEnv].stt.rememberFlowid,
+                            },
+                          },
+                        };
+                        localStorage.setItem(
+                          "aiola-settings",
+                          JSON.stringify(settingsToSave)
+                        );
+                        setSettings(settingsToSave);
+                      }}
+                      placeholder="Enter your Aiola API key"
+                      className="config-dialog__input"
+                    />
+                    <div className="config-dialog__input-actions">
+                      <CopyButton value={tempSettings[tempSettings.environment].connection.apiKey} />
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            <div className="config-dialog__field-row" style={{ marginTop: "1rem" }}>
-              <Label className="config-dialog__label config-dialog__label--compact">Base URL</Label>
-              <div className="config-dialog__url-display-container">
-                <div className="config-dialog__url-text">
-                  {tempSettings[tempSettings.environment].connection.baseUrl}
                 </div>
-                <CopyButton value={tempSettings[tempSettings.environment].connection.baseUrl} />
-              </div>
-            </div>
 
-            <div className="config-dialog__field-row">
-              <Label className="config-dialog__label config-dialog__label--compact">Auth URL</Label>
-              <div className="config-dialog__url-display-container">
-                <div className="config-dialog__url-text">
-                  {tempSettings[tempSettings.environment].connection.authBaseUrl}
-                </div>
-                <CopyButton value={tempSettings[tempSettings.environment].connection.authBaseUrl} />
-              </div>
-            </div>
-          </section>
-
-          {/* STT Section */}
-          <section className="config-dialog__section">
-            <div className="config-dialog__section-header">
-              <h3 className="config-dialog__section-title">Speech-to-Text</h3>
-              <p className="config-dialog__section-subtitle">
-                Configure speech recognition settings and language preferences
-              </p>
-            </div>
-
-            <div className="config-dialog__field-group">
-              <Label
-                htmlFor="stt-language"
-                className="config-dialog__label config-dialog__label--required"
-              >
-                Language/Accent
-              </Label>
-              <Select
-                value={tempSettings[tempSettings.environment].stt.language}
-                onValueChange={(value) => {
-                  console.log("[ConfigDialog] STT language changed:", {
-                    from: tempSettings[tempSettings.environment].stt.language,
-                    to: value,
-                    languageLabel: STT_LANGUAGES.find(
-                      (lang) => lang.value === value
-                    )?.label,
-                  });
-                  const currentEnv = tempSettings.environment;
-                  setTempSettings({
-                    ...tempSettings,
-                    [currentEnv]: {
-                      ...tempSettings[currentEnv],
-                      stt: {
-                        ...tempSettings[currentEnv].stt,
-                        language: value as STTLanguageCode,
-                      },
-                    },
-                  });
-                }}
-              >
-                <SelectTrigger className="config-dialog__select">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STT_LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="config-dialog__field-group">
-              <Label htmlFor="keywords" className="config-dialog__label">
-                Keywords
-              </Label>
-              <Textarea
-                id="keywords"
-                value={tempSettings[tempSettings.environment].stt.keywords.join(
-                  ", "
-                )}
-                onChange={(e) => {
-                  const newKeywords = e.target.value
-                    .split(",")
-                    .map((k) => k.trim())
-                    .filter(Boolean);
-                  console.log("[ConfigDialog] STT keywords changed:", {
-                    from: tempSettings[tempSettings.environment].stt.keywords,
-                    to: newKeywords,
-                    count: newKeywords.length,
-                  });
-                  const currentEnv = tempSettings.environment;
-                  setTempSettings({
-                    ...tempSettings,
-                    [currentEnv]: {
-                      ...tempSettings[currentEnv],
-                      stt: {
-                        ...tempSettings[currentEnv].stt,
-                        keywords: newKeywords,
-                      },
-                    },
-                  });
-                }}
-                placeholder="[word1, word2] or [{'A Yo La': 'aiola'}, {'bay tar': 'beitar'}]"
-                rows={3}
-                className="config-dialog__textarea"
-              />
-              <p className="config-dialog__helper-text">
-                Comma-separated keywords to improve recognition accuracy
-              </p>
-            </div>
-
-            <div className="config-dialog__field-group">
-              <Label htmlFor="schema-values" className="config-dialog__label">
-                Schema Values
-              </Label>
-              <Textarea
-                ref={schemaValuesTextareaRef}
-                id="schema-values"
-                value={schemaValuesRawText}
-                onChange={(e) => {
-                  // Just update the raw text - no validation while typing
-                  setSchemaValuesRawText(e.target.value);
-                  // Clear any existing errors when user starts typing
-                  if (schemaValuesError) {
-                    setSchemaValuesError(null);
-                  }
-                }}
-                placeholder='{"contact.name": ["John Doe", "Jane Smith"], "contact.email": ["john@example.com"]}'
-                rows={6}
-                className={`config-dialog__textarea ${
-                  schemaValuesError ? "config-dialog__textarea--error" : ""
-                }`}
-              />
-              {schemaValuesError ? (
-                <p className="config-dialog__error-text">{schemaValuesError}</p>
-              ) : (
-                <p className="config-dialog__helper-text">
-                  JSON object with dot-notation keys mapping to arrays of
-                  strings or numbers. Supports copy/paste. Example: {"{"}
-                  "contact.name": ["John Doe", "Jane Smith"]{"}"}
-                </p>
-              )}
-              <div style={{ marginTop: "0.75rem" }}>
-                <Button
-                  onClick={handleSetSchemaValues}
-                  disabled={isSettingSchemaValues || !isConnected}
-                  className="config-dialog__button config-dialog__button--primary"
-                >
-                  {isSettingSchemaValues ? "Setting..." : "Set Schema Values"}
-                </Button>
-              </div>
-            </div>
-
-            <div className="config-dialog__field-group">
-              <Label className="config-dialog__label">VAD Config</Label>
-              <div className="config-dialog__vad-config">
-                <div className="config-dialog__vad-toggle">
-                  <label className="config-dialog__checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={
-                        typeof tempSettings[tempSettings.environment].stt
-                          .vad === "object"
+                <div className="config-dialog__field-group">
+                  <Label htmlFor="workflowId" className="config-dialog__label">
+                    Workflow ID
+                  </Label>
+                  <div className="config-dialog__input-actions-container">
+                    <Input
+                      id="workflowId"
+                      value={
+                        tempSettings[tempSettings.environment].connection
+                          .workflowId || ""
                       }
                       onChange={(e) => {
                         const currentEnv = tempSettings.environment;
@@ -1018,250 +752,543 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           ...tempSettings,
                           [currentEnv]: {
                             ...tempSettings[currentEnv],
-                            stt: {
-                              ...tempSettings[currentEnv].stt,
-                              vad: e.target.checked
-                                ? {
-                                    threshold: 0.5,
-                                    min_speech_ms: 250,
-                                    min_silence_ms: 500,
-                                    max_segment_ms: 30000,
-                                  }
-                                : "default",
+                            connection: {
+                              ...tempSettings[currentEnv].connection,
+                              workflowId: e.target.value,
                             },
                           },
                         });
                       }}
-                      className="config-dialog__checkbox"
+                      placeholder="Enter workflow ID for STT processing"
+                      className="config-dialog__input"
                     />
-                    <span>Use custom VAD configuration</span>
-                  </label>
-                </div>
-
-                {typeof tempSettings[tempSettings.environment].stt.vad ===
-                  "object" && (
-                  <div className="config-dialog__vad-fields">
-                    <div className="config-dialog__vad-field">
-                      <Label
-                        htmlFor="vad-threshold"
-                        className="config-dialog__vad-label"
-                      >
-                        Threshold (0.0 - 1.0)
-                      </Label>
-                      <Input
-                        id="vad-threshold"
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={
-                          (
-                            tempSettings[tempSettings.environment].stt
-                              .vad as VadConfig
-                          ).threshold || 0.5
-                        }
-                        onChange={(e) => {
-                          const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt
-                            .vad as VadConfig;
-                          setTempSettings({
-                            ...tempSettings,
-                            [currentEnv]: {
-                              ...tempSettings[currentEnv],
-                              stt: {
-                                ...tempSettings[currentEnv].stt,
-                                vad: {
-                                  ...vadConfig,
-                                  threshold: parseFloat(e.target.value) || 0.5,
-                                },
-                              },
-                            },
-                          });
-                        }}
-                        className="config-dialog__input"
-                      />
-                    </div>
-
-                    <div className="config-dialog__vad-field">
-                      <Label
-                        htmlFor="vad-min-speech"
-                        className="config-dialog__vad-label"
-                      >
-                        Min Speech (ms)
-                      </Label>
-                      <Input
-                        id="vad-min-speech"
-                        type="number"
-                        min="0"
-                        value={
-                          (
-                            tempSettings[tempSettings.environment].stt
-                              .vad as VadConfig
-                          ).min_speech_ms || 250
-                        }
-                        onChange={(e) => {
-                          const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt
-                            .vad as VadConfig;
-                          setTempSettings({
-                            ...tempSettings,
-                            [currentEnv]: {
-                              ...tempSettings[currentEnv],
-                              stt: {
-                                ...tempSettings[currentEnv].stt,
-                                vad: {
-                                  ...vadConfig,
-                                  min_speech_ms:
-                                    parseInt(e.target.value) || 250,
-                                },
-                              },
-                            },
-                          });
-                        }}
-                        className="config-dialog__input"
-                      />
-                    </div>
-
-                    <div className="config-dialog__vad-field">
-                      <Label
-                        htmlFor="vad-min-silence"
-                        className="config-dialog__vad-label"
-                      >
-                        Min Silence (ms)
-                      </Label>
-                      <Input
-                        id="vad-min-silence"
-                        type="number"
-                        min="0"
-                        value={
-                          (
-                            tempSettings[tempSettings.environment].stt
-                              .vad as VadConfig
-                          ).min_silence_ms || 500
-                        }
-                        onChange={(e) => {
-                          const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt
-                            .vad as VadConfig;
-                          setTempSettings({
-                            ...tempSettings,
-                            [currentEnv]: {
-                              ...tempSettings[currentEnv],
-                              stt: {
-                                ...tempSettings[currentEnv].stt,
-                                vad: {
-                                  ...vadConfig,
-                                  min_silence_ms:
-                                    parseInt(e.target.value) || 500,
-                                },
-                              },
-                            },
-                          });
-                        }}
-                        className="config-dialog__input"
-                      />
-                    </div>
-
-                    <div className="config-dialog__vad-field">
-                      <Label
-                        htmlFor="vad-max-segment"
-                        className="config-dialog__vad-label"
-                      >
-                        Max Segment (ms)
-                      </Label>
-                      <Input
-                        id="vad-max-segment"
-                        type="number"
-                        min="0"
-                        value={
-                          (
-                            tempSettings[tempSettings.environment].stt
-                              .vad as VadConfig
-                          ).max_segment_ms || 30000
-                        }
-                        onChange={(e) => {
-                          const currentEnv = tempSettings.environment;
-                          const vadConfig = tempSettings[currentEnv].stt
-                            .vad as VadConfig;
-                          setTempSettings({
-                            ...tempSettings,
-                            [currentEnv]: {
-                              ...tempSettings[currentEnv],
-                              stt: {
-                                ...tempSettings[currentEnv].stt,
-                                vad: {
-                                  ...vadConfig,
-                                  max_segment_ms:
-                                    parseInt(e.target.value) || 30000,
-                                },
-                              },
-                            },
-                          });
-                        }}
-                        className="config-dialog__input"
-                      />
+                    <div className="config-dialog__input-actions">
+                      <CopyButton value={tempSettings[tempSettings.environment].connection.workflowId || ""} />
+                      {tempSettings[tempSettings.environment].connection.workflowId !== PREDEFINED_WORKFLOW_IDS[tempSettings.environment as keyof typeof PREDEFINED_WORKFLOW_IDS] && (
+                        <button
+                          onClick={handleResetWorkflowId}
+                          className="config-dialog__field-reset-button"
+                          title="Reset to default workflow ID"
+                          type="button"
+                        >
+                          <RotateCcw size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </section>
 
-          {/* TTS Section */}
-          <section className="config-dialog__section">
-            <div className="config-dialog__section-header">
-              <h3 className="config-dialog__section-title">Text-to-Speech</h3>
-              <p className="config-dialog__section-subtitle">
-                Configure voice synthesis settings and voice selection
-              </p>
-            </div>
+                </div>
 
-            <div className="config-dialog__field-group">
-              <Label htmlFor="tts-voice" className="config-dialog__label">
-                Voice
-              </Label>
-              <Select
-                value={tempSettings[tempSettings.environment].tts.voice}
-                onValueChange={(value) => {
-                  console.log("[ConfigDialog] TTS voice changed:", {
-                    from: tempSettings[tempSettings.environment].tts.voice,
-                    to: value,
-                    voiceLabel: TTS_VOICES.find(
-                      (voice) => voice.value === value
-                    )?.label,
-                  });
-                  const currentEnv = tempSettings.environment;
-                  setTempSettings({
-                    ...tempSettings,
-                    [currentEnv]: {
-                      ...tempSettings[currentEnv],
-                      tts: {
-                        ...tempSettings[currentEnv].tts,
-                        voice: value as TTSVoice,
-                      },
-                    },
-                  });
-                }}
-              >
-                <SelectTrigger className="config-dialog__select">
-                  <SelectValue placeholder="Select voice" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TTS_VOICES.map((voice) => (
-                    <SelectItem key={voice.value} value={voice.value}>
-                      {voice.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="config-dialog__field-group">
+                  <Label className="config-dialog__label">Environment</Label>
+                  <div className="config-dialog__toggle-container">
+                    <button
+                      type="button"
+                      onClick={() => switchEnvironment("prod")}
+                      className={`config-dialog__toggle-button ${
+                        tempSettings.environment === "prod"
+                          ? "config-dialog__toggle-button--active"
+                          : ""
+                      }`}
+                    >
+                      Prod
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchEnvironment("dev")}
+                      className={`config-dialog__toggle-button ${
+                        tempSettings.environment === "dev"
+                          ? "config-dialog__toggle-button--active"
+                          : ""
+                      }`}
+                    >
+                      Dev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchEnvironment("stage")}
+                      className={`config-dialog__toggle-button ${
+                        tempSettings.environment === "stage"
+                          ? "config-dialog__toggle-button--active"
+                          : ""
+                      }`}
+                    >
+                      Stage
+                    </button>
+                  </div>
+                  <p className="config-dialog__helper-text">
+                    Select the API environment: Production, Development, or Stage
+                  </p>
+                </div>
 
-            <div className="config-dialog__info-box">
-              <p className="config-dialog__info-text">
-                Language/Accent: Fixed to English (en) - non-editable
-              </p>
-            </div>
-          </section>
+
+
+                <div className="config-dialog__ultra-compact-row">
+                  <div className="config-dialog__ultra-compact-header">
+                    <h4 className="config-dialog__section-title--micro">Environment URLs</h4>
+                    
+                    {tempSettings.environment === "prod" && (
+                      <div className="config-dialog__inline-input-group">
+                        <Label htmlFor="prod-prefix" className="config-dialog__label--tiny">Prefix:</Label>
+                        <div className="config-dialog__input-actions-container">
+                          <Input
+                            id="prod-prefix"
+                            value={tempSettings.prod.connection.prefix || ""}
+                            onChange={(e) => {
+                              const prefix = e.target.value;
+                              const baseUrl = prefix ? `https://${prefix}-api.aiola.ai` : "https://apis.aiola.ai";
+                              const authBaseUrl = prefix ? `https://${prefix}-auth.aiola.ai` : "https://auth.aiola.ai";
+                              
+                              setTempSettings({
+                                ...tempSettings,
+                                prod: {
+                                  ...tempSettings.prod,
+                                  connection: {
+                                    ...tempSettings.prod.connection,
+                                    prefix,
+                                    baseUrl,
+                                    authBaseUrl,
+                                  },
+                                },
+                              });
+                            }}
+                            placeholder="e.g. pg-vp2"
+                            className="config-dialog__input--micro"
+                          />
+                          {tempSettings.prod.connection.prefix && (
+                            <div className="config-dialog__input-actions">
+                              <button
+                                onClick={handleResetConnection}
+                                className="config-dialog__reset-button"
+                                title="Clear prefix and reset defaults"
+                                type="button"
+                              >
+                                <RotateCcw size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="config-dialog__ultra-compact-content">
+                    <div className="config-dialog__url-pill">
+                      <span className="config-dialog__url-pill-label">BASE:</span>
+                      <span className="config-dialog__url-pill-value">{tempSettings[tempSettings.environment].connection.baseUrl}</span>
+                      <CopyButton value={tempSettings[tempSettings.environment].connection.baseUrl} />
+                    </div>
+                    
+                    <div className="config-dialog__url-pill">
+                      <span className="config-dialog__url-pill-label">AUTH:</span>
+                      <span className="config-dialog__url-pill-value">{tempSettings[tempSettings.environment].connection.authBaseUrl}</span>
+                      <CopyButton value={tempSettings[tempSettings.environment].connection.authBaseUrl} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </TabsContent>
+
+            {/* STT Section */}
+            <TabsContent value="stt">
+              <section className="config-dialog__section">
+                <div className="config-dialog__section-header">
+                  <h3 className="config-dialog__section-title">Speech-to-Text</h3>
+                  <p className="config-dialog__section-subtitle">
+                    Configure speech recognition settings and language preferences
+                  </p>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label
+                    htmlFor="stt-language"
+                    className="config-dialog__label config-dialog__label--required"
+                  >
+                    Language/Accent
+                  </Label>
+                  <Select
+                    value={tempSettings[tempSettings.environment].stt.language}
+                    onValueChange={(value) => {
+                      console.log("[ConfigDialog] STT language changed:", {
+                        from: tempSettings[tempSettings.environment].stt.language,
+                        to: value,
+                        languageLabel: STT_LANGUAGES.find(
+                          (lang) => lang.value === value
+                        )?.label,
+                      });
+                      const currentEnv = tempSettings.environment;
+                      setTempSettings({
+                        ...tempSettings,
+                        [currentEnv]: {
+                          ...tempSettings[currentEnv],
+                          stt: {
+                            ...tempSettings[currentEnv].stt,
+                            language: value as STTLanguageCode,
+                          },
+                        },
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="config-dialog__select">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STT_LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label htmlFor="keywords" className="config-dialog__label">
+                    Keywords
+                  </Label>
+                  <Textarea
+                    id="keywords"
+                    value={tempSettings[tempSettings.environment].stt.keywords.join(
+                      ", "
+                    )}
+                    onChange={(e) => {
+                      const newKeywords = e.target.value
+                        .split(",")
+                        .map((k) => k.trim())
+                        .filter(Boolean);
+                      console.log("[ConfigDialog] STT keywords changed:", {
+                        from: tempSettings[tempSettings.environment].stt.keywords,
+                        to: newKeywords,
+                        count: newKeywords.length,
+                      });
+                      const currentEnv = tempSettings.environment;
+                      setTempSettings({
+                        ...tempSettings,
+                        [currentEnv]: {
+                          ...tempSettings[currentEnv],
+                          stt: {
+                            ...tempSettings[currentEnv].stt,
+                            keywords: newKeywords,
+                          },
+                        },
+                      });
+                    }}
+                    placeholder="[word1, word2] or [{'A Yo La': 'aiola'}, {'bay tar': 'beitar'}]"
+                    rows={3}
+                    className="config-dialog__textarea"
+                  />
+                  <p className="config-dialog__helper-text">
+                    Comma-separated keywords to improve recognition accuracy
+                  </p>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label htmlFor="schema-values" className="config-dialog__label">
+                    Schema Values
+                  </Label>
+                  <Textarea
+                    ref={schemaValuesTextareaRef}
+                    id="schema-values"
+                    value={schemaValuesRawText}
+                    onChange={(e) => {
+                      // Just update the raw text - no validation while typing
+                      setSchemaValuesRawText(e.target.value);
+                      // Clear any existing errors when user starts typing
+                      if (schemaValuesError) {
+                        setSchemaValuesError(null);
+                      }
+                    }}
+                    placeholder='{"contact.name": ["John Doe", "Jane Smith"], "contact.email": ["john@example.com"]}'
+                    rows={6}
+                    className={`config-dialog__textarea ${
+                      schemaValuesError ? "config-dialog__textarea--error" : ""
+                    }`}
+                  />
+                  {schemaValuesError ? (
+                    <p className="config-dialog__error-text">{schemaValuesError}</p>
+                  ) : (
+                    <p className="config-dialog__helper-text">
+                      JSON object with dot-notation keys mapping to arrays of
+                      strings or numbers. Supports copy/paste. Example: {"{"}
+                      "contact.name": ["John Doe", "Jane Smith"]{"}"}
+                    </p>
+                  )}
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <Button
+                      onClick={handleSetSchemaValues}
+                      disabled={isSettingSchemaValues || !isConnected}
+                      className="config-dialog__button config-dialog__button--primary"
+                    >
+                      {isSettingSchemaValues ? "Setting..." : "Set Schema Values"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label className="config-dialog__label">VAD Config</Label>
+                  <div className="config-dialog__vad-config">
+                    <div className="config-dialog__vad-toggle">
+                      <label className="config-dialog__checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={
+                            typeof tempSettings[tempSettings.environment].stt
+                              .vad === "object"
+                          }
+                          onChange={(e) => {
+                            const currentEnv = tempSettings.environment;
+                            setTempSettings({
+                              ...tempSettings,
+                              [currentEnv]: {
+                                ...tempSettings[currentEnv],
+                                stt: {
+                                  ...tempSettings[currentEnv].stt,
+                                  vad: e.target.checked
+                                    ? {
+                                        threshold: 0.5,
+                                        min_speech_ms: 250,
+                                        min_silence_ms: 500,
+                                        max_segment_ms: 30000,
+                                      }
+                                    : "default",
+                                },
+                              },
+                            });
+                          }}
+                          className="config-dialog__checkbox"
+                        />
+                        <span>Use custom VAD configuration</span>
+                      </label>
+                    </div>
+
+                    {typeof tempSettings[tempSettings.environment].stt.vad ===
+                      "object" && (
+                      <div className="config-dialog__vad-fields">
+                        <div className="config-dialog__vad-field">
+                          <Label
+                            htmlFor="vad-threshold"
+                            className="config-dialog__vad-label"
+                          >
+                            Threshold (0.0 - 1.0)
+                          </Label>
+                          <Input
+                            id="vad-threshold"
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={
+                              (
+                                tempSettings[tempSettings.environment].stt
+                                  .vad as VadConfig
+                              ).threshold || 0.5
+                            }
+                            onChange={(e) => {
+                              const currentEnv = tempSettings.environment;
+                              const vadConfig = tempSettings[currentEnv].stt
+                                .vad as VadConfig;
+                              setTempSettings({
+                                ...tempSettings,
+                                [currentEnv]: {
+                                  ...tempSettings[currentEnv],
+                                  stt: {
+                                    ...tempSettings[currentEnv].stt,
+                                    vad: {
+                                      ...vadConfig,
+                                      threshold: parseFloat(e.target.value) || 0.5,
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            className="config-dialog__input"
+                          />
+                        </div>
+
+                        <div className="config-dialog__vad-field">
+                          <Label
+                            htmlFor="vad-min-speech"
+                            className="config-dialog__vad-label"
+                          >
+                            Min Speech (ms)
+                          </Label>
+                          <Input
+                            id="vad-min-speech"
+                            type="number"
+                            min="0"
+                            value={
+                              (
+                                tempSettings[tempSettings.environment].stt
+                                  .vad as VadConfig
+                              ).min_speech_ms || 250
+                            }
+                            onChange={(e) => {
+                              const currentEnv = tempSettings.environment;
+                              const vadConfig = tempSettings[currentEnv].stt
+                                .vad as VadConfig;
+                              setTempSettings({
+                                ...tempSettings,
+                                [currentEnv]: {
+                                  ...tempSettings[currentEnv],
+                                  stt: {
+                                    ...tempSettings[currentEnv].stt,
+                                    vad: {
+                                      ...vadConfig,
+                                      min_speech_ms:
+                                        parseInt(e.target.value) || 250,
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            className="config-dialog__input"
+                          />
+                        </div>
+
+                        <div className="config-dialog__vad-field">
+                          <Label
+                            htmlFor="vad-min-silence"
+                            className="config-dialog__vad-label"
+                          >
+                            Min Silence (ms)
+                          </Label>
+                          <Input
+                            id="vad-min-silence"
+                            type="number"
+                            min="0"
+                            value={
+                              (
+                                tempSettings[tempSettings.environment].stt
+                                  .vad as VadConfig
+                              ).min_silence_ms || 500
+                            }
+                            onChange={(e) => {
+                              const currentEnv = tempSettings.environment;
+                              const vadConfig = tempSettings[currentEnv].stt
+                                .vad as VadConfig;
+                              setTempSettings({
+                                ...tempSettings,
+                                [currentEnv]: {
+                                  ...tempSettings[currentEnv],
+                                  stt: {
+                                    ...tempSettings[currentEnv].stt,
+                                    vad: {
+                                      ...vadConfig,
+                                      min_silence_ms:
+                                        parseInt(e.target.value) || 500,
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            className="config-dialog__input"
+                          />
+                        </div>
+
+                        <div className="config-dialog__vad-field">
+                          <Label
+                            htmlFor="vad-max-segment"
+                            className="config-dialog__vad-label"
+                          >
+                            Max Segment (ms)
+                          </Label>
+                          <Input
+                            id="vad-max-segment"
+                            type="number"
+                            min="0"
+                            value={
+                              (
+                                tempSettings[tempSettings.environment].stt
+                                  .vad as VadConfig
+                              ).max_segment_ms || 30000
+                            }
+                            onChange={(e) => {
+                              const currentEnv = tempSettings.environment;
+                              const vadConfig = tempSettings[currentEnv].stt
+                                .vad as VadConfig;
+                              setTempSettings({
+                                ...tempSettings,
+                                [currentEnv]: {
+                                  ...tempSettings[currentEnv],
+                                  stt: {
+                                    ...tempSettings[currentEnv].stt,
+                                    vad: {
+                                      ...vadConfig,
+                                      max_segment_ms:
+                                        parseInt(e.target.value) || 30000,
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            className="config-dialog__input"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </TabsContent>
+
+            {/* TTS Section */}
+            <TabsContent value="tts">
+              <section className="config-dialog__section">
+                <div className="config-dialog__section-header">
+                  <h3 className="config-dialog__section-title">Text-to-Speech</h3>
+                  <p className="config-dialog__section-subtitle">
+                    Configure voice synthesis settings and voice selection
+                  </p>
+                </div>
+
+                <div className="config-dialog__field-group">
+                  <Label htmlFor="tts-voice" className="config-dialog__label">
+                    Voice
+                  </Label>
+                  <Select
+                    value={tempSettings[tempSettings.environment].tts.voice}
+                    onValueChange={(value) => {
+                      console.log("[ConfigDialog] TTS voice changed:", {
+                        from: tempSettings[tempSettings.environment].tts.voice,
+                        to: value,
+                        voiceLabel: TTS_VOICES.find(
+                          (voice) => voice.value === value
+                        )?.label,
+                      });
+                      const currentEnv = tempSettings.environment;
+                      setTempSettings({
+                        ...tempSettings,
+                        [currentEnv]: {
+                          ...tempSettings[currentEnv],
+                          tts: {
+                            ...tempSettings[currentEnv].tts,
+                            voice: value as TTSVoice,
+                          },
+                        },
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="config-dialog__select">
+                      <SelectValue placeholder="Select voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TTS_VOICES.map((voice) => (
+                        <SelectItem key={voice.value} value={voice.value}>
+                          {voice.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="config-dialog__info-box">
+                  <p className="config-dialog__info-text">
+                    Language/Accent: Fixed to English (en) - non-editable
+                  </p>
+                </div>
+              </section>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="config-dialog__footer">
