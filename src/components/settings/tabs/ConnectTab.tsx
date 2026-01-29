@@ -2,12 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RotateCcw } from "lucide-react";
 import { CopyButton } from "../shared/CopyButton";
-import { 
-  type SettingsState, 
-  type Environment, 
-  PREDEFINED_WORKFLOW_IDS, 
-  DEFAULT_CONNECTION_SETTINGS 
-} from "@/state/settings";
+import { type SettingsState, type Environment, PREDEFINED_WORKFLOW_IDS, DEFAULT_CONNECTION_SETTINGS } from "@/state/settings";
 import { toast } from "sonner";
 import { useCallback } from "react";
 
@@ -20,21 +15,11 @@ interface ConnectTabProps {
 
 import { getCurrentEnvironmentSettings, setCurrentEnvironmentSettings } from "../shared/utils";
 
-export function ConnectTab({ 
-  tempSettings, 
-  setTempSettings, 
-  setSettings,
-  setHasSettingsChanged 
-}: ConnectTabProps) {
-  
+export function ConnectTab({ tempSettings, setTempSettings, setSettings, setHasSettingsChanged }: ConnectTabProps) {
   const switchEnvironment = useCallback(
     (newEnvironment: Environment) => {
       const currentEnv = tempSettings.environment;
-      const updatedSettings = setCurrentEnvironmentSettings(
-        tempSettings,
-        currentEnv,
-        getCurrentEnvironmentSettings(tempSettings)
-      );
+      const updatedSettings = setCurrentEnvironmentSettings(tempSettings, currentEnv, getCurrentEnvironmentSettings(tempSettings));
 
       const newSettings = {
         ...updatedSettings,
@@ -51,7 +36,7 @@ export function ConnectTab({
       setTempSettings(newSettings);
       setHasSettingsChanged(true);
     },
-    [tempSettings, setTempSettings, setHasSettingsChanged]
+    [tempSettings, setTempSettings, setHasSettingsChanged],
   );
 
   const handleResetConnection = () => {
@@ -88,16 +73,11 @@ export function ConnectTab({
     <section className="config-dialog__section">
       <div className="config-dialog__section-header">
         <h3 className="config-dialog__section-title">Connection</h3>
-        <p className="config-dialog__section-subtitle">
-          Configure your Aiola API connection and authentication
-        </p>
+        <p className="config-dialog__section-subtitle">Configure your Aiola API connection and authentication</p>
       </div>
 
       <div className="config-dialog__field-group">
-        <Label
-          htmlFor="api-key"
-          className="config-dialog__label config-dialog__label--required"
-        >
+        <Label htmlFor="api-key" className="config-dialog__label config-dialog__label--required">
           API Key / Access Token
         </Label>
         <div className="config-dialog__input-actions-container">
@@ -126,15 +106,11 @@ export function ConnectTab({
                   ...updatedTempSettings[currentEnv],
                   stt: {
                     ...updatedTempSettings[currentEnv].stt,
-                    rememberFlowid:
-                      updatedTempSettings[currentEnv].stt.rememberFlowid,
+                    rememberFlowid: updatedTempSettings[currentEnv].stt.rememberFlowid,
                   },
                 },
               };
-              localStorage.setItem(
-                "aiola-settings",
-                JSON.stringify(settingsToSave)
-              );
+              localStorage.setItem("aiola-settings", JSON.stringify(settingsToSave));
               setSettings(settingsToSave);
             }}
             placeholder="Enter your Aiola API key"
@@ -173,12 +149,7 @@ export function ConnectTab({
           <div className="config-dialog__input-actions">
             <CopyButton value={tempSettings[tempSettings.environment].connection.workflowId || ""} />
             {tempSettings[tempSettings.environment].connection.workflowId !== PREDEFINED_WORKFLOW_IDS[tempSettings.environment as keyof typeof PREDEFINED_WORKFLOW_IDS] && (
-              <button
-                onClick={handleResetWorkflowId}
-                className="config-dialog__field-reset-button"
-                title="Reset to default workflow ID"
-                type="button"
-              >
+              <button onClick={handleResetWorkflowId} className="config-dialog__field-reset-button" title="Reset to default workflow ID" type="button">
                 <RotateCcw size={14} />
               </button>
             )}
@@ -190,23 +161,12 @@ export function ConnectTab({
         <Label className="config-dialog__label">Environment</Label>
         <div className="config-dialog__toggle-container">
           {(["prod", "dev", "stage"] as Environment[]).map((env) => (
-            <button
-              key={env}
-              type="button"
-              onClick={() => switchEnvironment(env)}
-              className={`config-dialog__toggle-button ${
-                tempSettings.environment === env
-                  ? "config-dialog__toggle-button--active"
-                  : ""
-              }`}
-            >
+            <button key={env} type="button" onClick={() => switchEnvironment(env)} className={`config-dialog__toggle-button ${tempSettings.environment === env ? "config-dialog__toggle-button--active" : ""}`}>
               {env.charAt(0).toUpperCase() + env.slice(1)}
             </button>
           ))}
         </div>
-        <p className="config-dialog__helper-text">
-          Select the API environment: Production, Development, or Stage
-        </p>
+        <p className="config-dialog__helper-text">Select the API environment: Production, Development, or Stage</p>
       </div>
 
       <div className="config-dialog__ultra-compact-row">
@@ -214,7 +174,9 @@ export function ConnectTab({
           <h4 className="config-dialog__section-title--micro">Environment URLs</h4>
           {tempSettings.environment === "prod" && (
             <div className="config-dialog__inline-input-group">
-              <Label htmlFor="prod-prefix" className="config-dialog__label--tiny">Prefix:</Label>
+              <Label htmlFor="prod-prefix" className="config-dialog__label--tiny">
+                Prefix:
+              </Label>
               <div className="config-dialog__input-actions-container">
                 <Input
                   id="prod-prefix"
@@ -223,7 +185,7 @@ export function ConnectTab({
                     const prefix = e.target.value;
                     const baseUrl = prefix ? `https://${prefix}-api.aiola.ai` : "https://apis.aiola.ai";
                     const authBaseUrl = prefix ? `https://${prefix}-auth.aiola.ai` : "https://auth.aiola.ai";
-                    
+
                     setTempSettings({
                       ...tempSettings,
                       prod: {
@@ -242,12 +204,47 @@ export function ConnectTab({
                 />
                 {tempSettings.prod.connection.prefix && (
                   <div className="config-dialog__input-actions">
-                    <button
-                      onClick={handleResetConnection}
-                      className="config-dialog__reset-button"
-                      title="Clear prefix and reset defaults"
-                      type="button"
-                    >
+                    <button onClick={handleResetConnection} className="config-dialog__reset-button" title="Clear prefix and reset defaults" type="button">
+                      <RotateCcw size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {tempSettings.environment === "dev" && (
+            <div className="config-dialog__inline-input-group">
+              <Label htmlFor="dev-prefix" className="config-dialog__label--tiny">
+                Prefix:
+              </Label>
+              <div className="config-dialog__input-actions-container">
+                <Input
+                  id="dev-prefix"
+                  value={tempSettings.dev.connection.prefix || ""}
+                  onChange={(e) => {
+                    const prefix = e.target.value;
+                    const baseUrl = prefix ? `https://${prefix}-api.internal.aiola.ai` : "https://-api.internal.aiola.ai";
+                    const authBaseUrl = prefix ? `https://${prefix}-auth.internal.aiola.ai` : "https:-auth.internal.aiola.ai";
+
+                    setTempSettings({
+                      ...tempSettings,
+                      dev: {
+                        ...tempSettings.dev,
+                        connection: {
+                          ...tempSettings.dev.connection,
+                          prefix,
+                          baseUrl,
+                          authBaseUrl,
+                        },
+                      },
+                    });
+                  }}
+                  placeholder="e.g. vp4"
+                  className="config-dialog__input--micro"
+                />
+                {tempSettings.dev.connection.prefix && (
+                  <div className="config-dialog__input-actions">
+                    <button onClick={handleResetConnection} className="config-dialog__reset-button" title="Clear prefix and reset defaults" type="button">
                       <RotateCcw size={12} />
                     </button>
                   </div>
@@ -263,7 +260,7 @@ export function ConnectTab({
             <span className="config-dialog__url-pill-value">{tempSettings[tempSettings.environment].connection.baseUrl}</span>
             <CopyButton value={tempSettings[tempSettings.environment].connection.baseUrl} />
           </div>
-          
+
           <div className="config-dialog__url-pill">
             <span className="config-dialog__url-pill-label">AUTH:</span>
             <span className="config-dialog__url-pill-value">{tempSettings[tempSettings.environment].connection.authBaseUrl}</span>
