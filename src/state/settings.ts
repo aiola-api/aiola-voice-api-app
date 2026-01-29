@@ -86,6 +86,7 @@ export interface SettingsState {
       baseUrl: string;
       authBaseUrl: string;
       workflowId?: string;
+      prefix?: string;
     };
     stt: {
       language: STTLanguageCode;
@@ -134,6 +135,7 @@ export const DEFAULT_CONNECTION_SETTINGS: Record<Environment, SettingsState["pro
     baseUrl: "https://dev-vp1-api.internal.aiola.ai",
     authBaseUrl: "https://dev-vp1-auth.internal.aiola.ai",
     workflowId: PREDEFINED_WORKFLOW_IDS.dev,
+    prefix: "",
   },
   stage: {
     apiKey: "",
