@@ -39,6 +39,42 @@
   cursor: not-allowed;
 }
 
+/* Predefined URL Presets */
+.stream-source-presets {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.stream-source-preset-btn {
+  padding: 0.25rem 0.75rem;
+  border: 2px solid #000000;
+  border-radius: 0.25rem;
+  background: white;
+  color: #000000;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stream-source-preset-btn.active {
+  background: #000000;
+  color: #ffffff;
+}
+
+.stream-source-preset-btn:hover:not(.active):not(:disabled) {
+  background: #f4f4f5;
+  transform: translateY(-1px);
+}
+
+.stream-source-preset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* URL Input */
 .stream-source-url-wrapper {
   position: relative;

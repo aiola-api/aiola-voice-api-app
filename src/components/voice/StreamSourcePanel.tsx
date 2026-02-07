@@ -23,6 +23,11 @@ interface StreamSourcePanelProps {
   validateUrl: (url: string) => boolean;
 }
 
+const PREDEFINED_URLS = [
+  { label: "Short sample", url: "https://cdn.freesound.org/previews/645/645385_13590673-lq.mp3" },
+  { label: "Long sample", url: "https://cdn.freesound.org/previews/322/322026_689000-lq.mp3" },
+];
+
 const ACCEPTED_EXTENSIONS = ".mp3,.wav,.mp4,.m4a,.ogg,.flac,.webm";
 
 export function StreamSourcePanel({
@@ -121,7 +126,21 @@ export function StreamSourcePanel({
 
       {/* URL mode */}
       {sourceType === "url" && (
-        <div className="flex gap-2">
+        <div className="space-y-2">
+          <div className="stream-source-presets">
+            {PREDEFINED_URLS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                className={`stream-source-preset-btn ${url === preset.url ? "active" : ""}`}
+                onClick={() => setUrl(preset.url)}
+                disabled={isStreaming}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
           <div className="stream-source-url-wrapper flex-1">
             {getUrlStatusIcon()}
             <Input
@@ -146,6 +165,7 @@ export function StreamSourcePanel({
               Stream
             </Button>
           )}
+          </div>
         </div>
       )}
 
