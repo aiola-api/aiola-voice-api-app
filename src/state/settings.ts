@@ -74,6 +74,7 @@ export interface SettingsState {
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
       schemaValues: SchemaValues;
+      executionId?: string;
     };
     tts: {
       voice: TTSVoice;
@@ -94,6 +95,7 @@ export interface SettingsState {
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
       schemaValues: SchemaValues;
+      executionId?: string;
     };
     tts: {
       voice: TTSVoice;
@@ -113,6 +115,7 @@ export interface SettingsState {
       vad: "default" | VadConfig;
       rememberFlowid: boolean;
       schemaValues: SchemaValues;
+      executionId?: string;
     };
     tts: {
       voice: TTSVoice;
@@ -156,6 +159,7 @@ const defaultSettings: SettingsState = {
       vad: "default",
       rememberFlowid: true,
       schemaValues: {},
+      executionId: "",
     },
     tts: {
       voice: "en_us_female",
@@ -170,6 +174,7 @@ const defaultSettings: SettingsState = {
       vad: "default",
       rememberFlowid: true,
       schemaValues: {},
+      executionId: "",
     },
     tts: {
       voice: "en_us_female",
@@ -184,6 +189,7 @@ const defaultSettings: SettingsState = {
       vad: "default",
       rememberFlowid: true,
       schemaValues: {},
+      executionId: "",
     },
     tts: {
       voice: "en_us_female",
@@ -227,6 +233,7 @@ function loadSettingsFromStorage(): SettingsState {
               vad: parsed.stt?.vad || "default",
               rememberFlowid: parsed.stt?.rememberFlowid !== false,
               schemaValues: parsed.stt?.schemaValues || {},
+              executionId: "",
             },
             tts: {
               voice: parsed.tts?.voice || "en_us_female",
@@ -246,6 +253,7 @@ function loadSettingsFromStorage(): SettingsState {
               vad: "default",
               rememberFlowid: true,
               schemaValues: {},
+              executionId: "",
             },
             tts: {
               voice: "en_us_female",
@@ -265,6 +273,7 @@ function loadSettingsFromStorage(): SettingsState {
               vad: "default",
               rememberFlowid: true,
               schemaValues: {},
+              executionId: "",
             },
             tts: {
               voice: "en_us_female",

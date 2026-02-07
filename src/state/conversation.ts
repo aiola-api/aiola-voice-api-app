@@ -35,6 +35,8 @@ export interface ChatMessage {
   // Per-message amplitude data for waveform visualization
   amplitudeData?: AmplitudeData;
   amplitudeHistory?: AmplitudeData[];
+  sourceUrl?: string; // URL source for transcription (when streaming from URL)
+  sourceFileName?: string; // File name source for transcription (when streaming from local file)
 }
 
 export interface ConversationState {

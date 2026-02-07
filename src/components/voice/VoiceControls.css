@@ -84,6 +84,18 @@
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
 }
 
+/* Streaming state - red with stop icon, same as recording */
+.voice-controls__mic-button.voice-controls__mic-button--streaming {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+}
+
+.voice-controls__mic-button.voice-controls__mic-button--streaming:hover {
+  background-color: #dc2626 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
+}
+
 .voice-controls__connecting-indicator {
   position: relative;
   width: 100%;

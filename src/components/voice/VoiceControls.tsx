@@ -5,6 +5,7 @@ import {
   IconMicrophone,
   IconMicrophoneOff,
   IconMicrophoneFilled,
+  IconPlayerStopFilled,
 } from "@tabler/icons-react";
 import { audioState } from "@/state/audio";
 import { conversationState, type ChatMessage } from "@/state/conversation";
@@ -122,6 +123,11 @@ export function VoiceControls() {
 
   // Compute microphone state based on connection and recording state
   const computedMicrophoneState = (() => {
+    // If URL streaming is active, don't override the state - let URL streaming control it
+    if (audio.currentAudioSource === "url") {
+      return audio.microphoneState;
+    }
+
     if (audio.isRecording) return "connected";
     if (preparingMic) return "preparingMic";
     // Only show connecting state for microphone-specific operations, not general connection state
@@ -191,6 +197,19 @@ export function VoiceControls() {
     sessionId,
     setAudio,
   ]);
+
+  // Watch for external mic-stop signal from buffer pipeline (file streaming started)
+  useEffect(() => {
+    if (audio.micStopRequested > 0) {
+      if (audio.isRecording) {
+        console.log("Mic stop requested by buffer pipeline, stopping recording...");
+        stopRecording();
+      }
+      // Always reset signal (even if mic already stopped naturally)
+      setAudio((prev) => ({ ...prev, micStopRequested: 0 }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.micStopRequested]);
 
   // Refs for audio processing
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -536,6 +555,14 @@ export function VoiceControls() {
       return;
     }
 
+    // Stop any active buffer stream before starting mic (one stream at a time)
+    if (audio.currentAudioSource === "url") {
+      console.log("Stopping active buffer stream before starting mic...");
+      setAudio((prev) => ({ ...prev, bufferStreamStopRequested: Date.now() }));
+      // Brief wait for the buffer pipeline to clean up
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     try {
       // Create STT request message in chat when recording starts
       const messageId = `stt_request_${Date.now()}_${Math.random()
@@ -626,6 +653,19 @@ export function VoiceControls() {
           sampleRate: 16000,
           latencyHint: "interactive",
         });
+
+        // Monitor AudioContext state changes — auto-resume if suspended under CPU pressure
+        audioContextRef.current.onstatechange = () => {
+          const ctx = audioContextRef.current;
+          if (!ctx) return;
+          console.log(`🔊 AudioContext state changed: ${ctx.state}`);
+          if (ctx.state === "suspended" || ctx.state === "interrupted") {
+            console.log("⚠️ AudioContext suspended/interrupted during recording, attempting resume...");
+            ctx.resume().catch((err) => {
+              console.error("❌ Failed to resume AudioContext:", err);
+            });
+          }
+        };
 
         // Resume AudioContext if it's suspended (required by some browsers)
         if (audioContextRef.current.state === "suspended") {
@@ -1470,6 +1510,13 @@ export function VoiceControls() {
       isRecording: audio.isRecording,
     });
 
+    // If buffer streaming or connecting (file/URL active), signal stop
+    if (audio.currentAudioSource === "url") {
+      console.log("Stop buffer stream requested via mic button");
+      setAudio((prev) => ({ ...prev, bufferStreamStopRequested: Date.now() }));
+      return;
+    }
+
     // If currently recording (connected state), stop recording and go to ready state
     if (computedMicrophoneState === "connected") {
       console.log("🔴 Currently connected/recording, stopping...");
@@ -1525,14 +1572,40 @@ export function VoiceControls() {
       currentSettings.stt.language as STTLanguageCode
     );
 
+    // Buffer stream active (connecting or streaming) — show stop icon
+    const isBufferStreamActive = audio.currentAudioSource === "url";
+
     switch (displayMicrophoneState) {
       case "connecting":
+        if (isBufferStreamActive) {
+          // Buffer stream connecting — show stop icon with loading animation
+          return (
+            <div className="voice-controls__mic-container">
+              <div className="voice-controls__connecting-indicator">
+                <div className="voice-controls__connecting-dot--white" />
+              </div>
+              <IconPlayerStopFilled className="voice-controls__mic-icon--connecting" />
+              <div className="voice-controls__language-indicator">
+                {languageShortLabel}
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="voice-controls__mic-container">
             <div className="voice-controls__connecting-indicator">
               <div className="voice-controls__connecting-dot" />
             </div>
             <IconMicrophone className="voice-controls__mic-icon--connecting" />
+            <div className="voice-controls__language-indicator">
+              {languageShortLabel}
+            </div>
+          </div>
+        );
+      case "streaming":
+        return (
+          <div className="voice-controls__mic-container">
+            <IconPlayerStopFilled className="voice-controls__mic-icon--connected" />
             <div className="voice-controls__language-indicator">
               {languageShortLabel}
             </div>
@@ -1589,11 +1662,17 @@ export function VoiceControls() {
     const baseClass = "voice-controls__mic-button";
     const stateClass = (() => {
       switch (displayMicrophoneState) {
+        case "streaming":
+          return "voice-controls__mic-button--streaming";
         case "connected":
           return "voice-controls__mic-button--connected";
         case "ready":
           return "voice-controls__mic-button--ready";
         case "connecting":
+          // Buffer stream connecting uses red/streaming style
+          if (audio.currentAudioSource === "url") {
+            return "voice-controls__mic-button--streaming";
+          }
           return "voice-controls__mic-button--connecting";
         case "preparingMic":
           return "voice-controls__mic-button--preparingMic";

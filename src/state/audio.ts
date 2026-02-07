@@ -5,7 +5,10 @@ export type MicrophoneState =
   | "ready"
   | "connected"
   | "connecting"
-  | "preparingMic";
+  | "preparingMic"
+  | "streaming";
+
+export type AudioSource = "microphone" | "url" | "idle";
 
 export interface AmplitudeData {
   average: number;
@@ -32,6 +35,12 @@ export interface AudioState {
   cancelFunction?: () => void;
   cancelChatFunction?: () => void;
   currentAudioElement?: HTMLAudioElement | null;
+  currentAudioSource: AudioSource;
+  streamingUrl?: string | null;
+  /** Set to Date.now() by VoiceControls to signal useBufferStreamPipeline to stop */
+  bufferStreamStopRequested: number;
+  /** Set to Date.now() by useBufferStreamPipeline to signal VoiceControls to stop mic */
+  micStopRequested: number;
 }
 
 export const audioState = atom<AudioState>({
@@ -52,5 +61,9 @@ export const audioState = atom<AudioState>({
     cancelFunction: undefined,
     cancelChatFunction: undefined,
     currentAudioElement: null,
+    currentAudioSource: "idle",
+    streamingUrl: null,
+    bufferStreamStopRequested: 0,
+    micStopRequested: 0,
   },
 });

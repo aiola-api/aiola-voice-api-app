@@ -1,24 +1,58 @@
 /* UploadDropzone Component Styles */
 
-.upload-dropzone {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease-in-out;
+/* Dialog Content - Black and White Theme (matching ConfigDialog) */
+.upload-dropzone-dialog {
+  background: rgba(250, 250, 250, 0.98) !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 12px !important;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
 }
 
-.upload-dropzone.drag-over {
-  transform: scale(1.05);
-  background-color: rgba(59, 130, 246, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
+/* Dialog Title */
+.upload-dropzone-dialog h2 {
+  color: #000000;
+  font-weight: 700;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
 }
 
-.upload-dropzone__file-input {
-  display: none;
+/* Tabs List */
+.upload-dropzone-dialog [role="tablist"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
-.upload-dropzone__upload-button {
+/* Tab Triggers - Black and White Theme */
+.upload-dropzone-dialog [role="tab"] {
+  padding: 0.5rem 1rem !important;
+  border: 2px solid #000000 !important;
+  border-radius: 0.25rem !important;
+  background: white !important;
+  color: #000000 !important;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+/* Active Tab */
+.upload-dropzone-dialog [role="tab"][data-state="active"] {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Tab Hover */
+.upload-dropzone-dialog [role="tab"]:hover:not([data-state="active"]) {
+  background: #f4f4f5 !important;
+  transform: translateY(-1px);
+}
+
+/* Trigger Button */
+.upload-dropzone__trigger-button {
   height: 3rem;
   width: 3rem;
   padding: 0;
@@ -29,7 +63,7 @@
   cursor: pointer;
 }
 
-.upload-dropzone__upload-button:hover {
+.upload-dropzone__trigger-button:hover {
   background-color: black;
   border-color: #fcfdfe;
 }
@@ -40,6 +74,89 @@
   color: white;
   stroke: white;
   fill: none;
+}
+
+
+/* File Upload Dropzone */
+.upload-dropzone__dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  border: 2px dashed #000000;
+  border-radius: 0.5rem;
+  background: white;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  min-height: 250px;
+  position: relative;
+}
+
+.upload-dropzone__dropzone:hover {
+  border-color: #000000;
+  background-color: #f9f9f9;
+}
+
+.upload-dropzone__dropzone.drag-over {
+  border-color: #000000;
+  border-style: solid;
+  background-color: #f4f4f5;
+  transform: scale(1.02);
+}
+
+.upload-dropzone__file-input {
+  display: none;
+}
+
+.upload-dropzone__dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.upload-dropzone__dropzone-icon {
+  color: #000000;
+}
+
+.upload-dropzone__dropzone-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #000000;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+.upload-dropzone__dropzone-description {
+  font-size: 0.875rem;
+  color: #666666;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+.upload-dropzone__dropzone-hint {
+  font-size: 0.8125rem;
+  color: #666666;
+  margin-top: 0.5rem;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+.upload-dropzone__browse-button {
+  margin-top: 0.5rem;
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.upload-dropzone__browse-button:hover:not(:disabled) {
+  background: #333333 !important;
+  transform: translateY(-1px);
 }
 
 .upload-dropzone__file-preview {
@@ -137,12 +254,12 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .upload-dropzone__upload-button {
+  .upload-dropzone__trigger-button {
     border-color: #fcfdfe !important;
     background-color: #334155;
   }
 
-  .upload-dropzone__upload-button:hover {
+  .upload-dropzone__trigger-button:hover {
     background-color: black !important;
     cursor: pointer;
   }

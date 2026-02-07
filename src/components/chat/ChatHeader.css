@@ -94,6 +94,11 @@
   /* Green for ready */
 }
 
+.chat-header__microphone-indicator--streaming {
+  color: #10b981;
+  /* Green for URL streaming */
+}
+
 .chat-header__microphone-indicator--connecting {
   color: #f59e0b;
   /* Amber for connecting */
@@ -120,6 +125,11 @@
 .chat-header__microphone-text--connected {
   color: #dc2626;
   /* Red for recording */
+}
+
+.chat-header__microphone-text--streaming {
+  color: #10b981;
+  /* Green for URL streaming */
 }
 
 .chat-header__microphone-text--ready {

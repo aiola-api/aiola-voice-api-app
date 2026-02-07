@@ -5,6 +5,7 @@ import type { SchemaValues, SetSchemaValuesResponse } from "@aiola/sdk";
 // Matches the SDK StreamingClient interface
 export interface StreamConnection {
   on: (event: string, callback: (...args: unknown[]) => void) => void;
+  off: (event: string, callback?: (...args: unknown[]) => void) => void;
   connect: () => void;
   disconnect: () => void;
   send: (data: ArrayBuffer) => void;

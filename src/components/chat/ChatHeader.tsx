@@ -45,15 +45,10 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
   const conversation = useRecoilValue(conversationState);
   const audio = useRecoilValue(audioState);
 
-  // Debug logging to track settings changes
-  console.log("ChatHeader settings:", settings);
-  console.log("ChatHeader currentSettings:", currentSettings);
-
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast.success(`${label} copied to clipboard`);
-      console.log(`${label} copied to clipboard`);
     } catch (err) {
       console.error("Failed to copy:", err);
       toast.error("Failed to copy to clipboard");
@@ -75,36 +70,42 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                   <IconCircleFilled
                     className={`chat-header__microphone-indicator ${audio.microphoneState === "connected"
                       ? "chat-header__microphone-indicator--connected"
-                      : audio.microphoneState === "ready"
-                        ? "chat-header__microphone-indicator--ready"
-                        : audio.microphoneState === "connecting"
-                          ? "chat-header__microphone-indicator--connecting"
-                          : audio.microphoneState === "preparingMic"
-                            ? "chat-header__microphone-indicator--preparingMic"
-                            : "chat-header__microphone-indicator--idle"
+                      : audio.microphoneState === "streaming"
+                        ? "chat-header__microphone-indicator--streaming"
+                        : audio.microphoneState === "ready"
+                          ? "chat-header__microphone-indicator--ready"
+                          : audio.microphoneState === "connecting"
+                            ? "chat-header__microphone-indicator--connecting"
+                            : audio.microphoneState === "preparingMic"
+                              ? "chat-header__microphone-indicator--preparingMic"
+                              : "chat-header__microphone-indicator--idle"
                       }`}
                   />
                   <span
                     className={`chat-header__microphone-text ${audio.microphoneState === "connected"
                       ? "chat-header__microphone-text--connected"
-                      : audio.microphoneState === "ready"
-                        ? "chat-header__microphone-text--ready"
-                        : audio.microphoneState === "connecting"
-                          ? "chat-header__microphone-text--connecting"
-                          : audio.microphoneState === "preparingMic"
-                            ? "chat-header__microphone-text--preparingMic"
-                            : "chat-header__microphone-text--idle"
+                      : audio.microphoneState === "streaming"
+                        ? "chat-header__microphone-text--streaming"
+                        : audio.microphoneState === "ready"
+                          ? "chat-header__microphone-text--ready"
+                          : audio.microphoneState === "connecting"
+                            ? "chat-header__microphone-text--connecting"
+                            : audio.microphoneState === "preparingMic"
+                              ? "chat-header__microphone-text--preparingMic"
+                              : "chat-header__microphone-text--idle"
                       }`}
                   >
                     {audio.microphoneState === "connected"
                       ? "Recording"
-                      : audio.microphoneState === "ready"
-                        ? "Ready"
-                        : audio.microphoneState === "connecting"
-                          ? "Connecting"
-                          : audio.microphoneState === "preparingMic"
-                            ? "Preparing Mic"
-                            : "Idle"}
+                      : audio.microphoneState === "streaming"
+                        ? "Streaming"
+                        : audio.microphoneState === "ready"
+                          ? "Ready"
+                          : audio.microphoneState === "connecting"
+                            ? "Connecting"
+                            : audio.microphoneState === "preparingMic"
+                              ? "Preparing Mic"
+                              : "Idle"}
                   </span>
                 </div>
               </div>
@@ -171,7 +172,20 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                 <span className="chat-header__connection-label">
                   Execution Id:
                 </span>
-                <span className="chat-header__connection-value">TBD 🚧</span>
+                <span className="chat-header__connection-value">
+                  {currentSettings.stt.executionId || "default"}
+                </span>
+                {currentSettings.stt.executionId && (
+                  <IconCopy
+                    className="chat-header__copy-icon"
+                    onClick={() =>
+                      copyToClipboard(
+                        currentSettings.stt.executionId || "",
+                        "Execution Id"
+                      )
+                    }
+                  />
+                )}
               </div>
             </div>
           </div>
