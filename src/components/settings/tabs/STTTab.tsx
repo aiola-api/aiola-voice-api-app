@@ -149,6 +149,34 @@ export function STTTab({
       </div>
 
       <div className="config-dialog__field-group">
+        <Label htmlFor="execution-id" className="config-dialog__label">
+          Execution ID
+        </Label>
+        <Input
+          id="execution-id"
+          type="text"
+          value={tempSettings[currentEnv].stt.executionId || ""}
+          onChange={(e) => {
+            setTempSettings({
+              ...tempSettings,
+              [currentEnv]: {
+                ...tempSettings[currentEnv],
+                stt: {
+                  ...tempSettings[currentEnv].stt,
+                  executionId: e.target.value,
+                },
+              },
+            });
+          }}
+          placeholder="e.g. my-execution-123"
+          className="config-dialog__input"
+        />
+        <p className="config-dialog__helper-text">
+          Optional execution ID passed to the aiOla SDK stream. Leave empty to let the server generate one.
+        </p>
+      </div>
+
+      <div className="config-dialog__field-group">
         <Label htmlFor="stt-language" className="config-dialog__label config-dialog__label--required">
           Language/Accent
         </Label>
@@ -313,6 +341,7 @@ export function STTTab({
           )}
         </div>
       </div>
+
     </section>
   );
 }

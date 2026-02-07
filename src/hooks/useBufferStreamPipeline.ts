@@ -63,6 +63,17 @@ export function useBufferStreamPipeline() {
       latencyHint: "interactive",
     });
 
+    // Monitor AudioContext state changes — auto-resume if suspended under CPU pressure
+    ctx.onstatechange = () => {
+      console.log(`🔊 [BufferPipeline] AudioContext state changed: ${ctx.state}`);
+      if (ctx.state === "suspended" || ctx.state === "interrupted") {
+        console.log("⚠️ [BufferPipeline] AudioContext suspended/interrupted, attempting resume...");
+        ctx.resume().catch((err) => {
+          console.error("❌ [BufferPipeline] Failed to resume AudioContext:", err);
+        });
+      }
+    };
+
     if (ctx.state === "suspended") {
       await ctx.resume();
     }

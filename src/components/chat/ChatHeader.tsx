@@ -172,7 +172,20 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
                 <span className="chat-header__connection-label">
                   Execution Id:
                 </span>
-                <span className="chat-header__connection-value">TBD 🚧</span>
+                <span className="chat-header__connection-value">
+                  {currentSettings.stt.executionId || "default"}
+                </span>
+                {currentSettings.stt.executionId && (
+                  <IconCopy
+                    className="chat-header__copy-icon"
+                    onClick={() =>
+                      copyToClipboard(
+                        currentSettings.stt.executionId || "",
+                        "Execution Id"
+                      )
+                    }
+                  />
+                )}
               </div>
             </div>
           </div>

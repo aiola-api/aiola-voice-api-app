@@ -654,6 +654,19 @@ export function VoiceControls() {
           latencyHint: "interactive",
         });
 
+        // Monitor AudioContext state changes — auto-resume if suspended under CPU pressure
+        audioContextRef.current.onstatechange = () => {
+          const ctx = audioContextRef.current;
+          if (!ctx) return;
+          console.log(`🔊 AudioContext state changed: ${ctx.state}`);
+          if (ctx.state === "suspended" || ctx.state === "interrupted") {
+            console.log("⚠️ AudioContext suspended/interrupted during recording, attempting resume...");
+            ctx.resume().catch((err) => {
+              console.error("❌ Failed to resume AudioContext:", err);
+            });
+          }
+        };
+
         // Resume AudioContext if it's suspended (required by some browsers)
         if (audioContextRef.current.state === "suspended") {
           await audioContextRef.current.resume();
