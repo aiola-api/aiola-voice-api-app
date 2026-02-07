@@ -137,6 +137,13 @@ export function useBufferStreamPipeline() {
         const messageId = `buffer_stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const streamSessionId = `stream_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
 
+        // For file sources, create a Blob URL so we can replay the audio later
+        let audioBlobUrl: string | undefined;
+        if (metadata.source === "file") {
+          const blob = new Blob([arrayBuffer.slice(0)], { type: "audio/mpeg" });
+          audioBlobUrl = URL.createObjectURL(blob);
+        }
+
         const streamMessage: ChatMessage = {
           id: messageId,
           role: "user",
@@ -150,6 +157,7 @@ export function useBufferStreamPipeline() {
           isRecording: false,
           sourceUrl: metadata.sourceUrl,
           sourceFileName: metadata.sourceFileName,
+          audioBlobUrl,
         };
 
         // Set refs BEFORE creating connection so handlers can use them

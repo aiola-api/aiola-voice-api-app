@@ -37,6 +37,7 @@ export interface ChatMessage {
   amplitudeHistory?: AmplitudeData[];
   sourceUrl?: string; // URL source for transcription (when streaming from URL)
   sourceFileName?: string; // File name source for transcription (when streaming from local file)
+  audioBlobUrl?: string; // Blob URL for replaying streamed file audio
 }
 
 export interface ConversationState {

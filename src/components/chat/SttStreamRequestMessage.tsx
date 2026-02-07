@@ -1,5 +1,6 @@
 import { IconMicrophone, IconWorldWww, IconFile } from "@tabler/icons-react";
 import { VoiceWaveform } from "./VoiceWaveform";
+import { SourcePlaybackButton } from "./SourcePlaybackButton";
 import { withTimeStamp } from "./withTimeStamp";
 import { componentClassName, formatDuration } from "@/lib/utils";
 import type { ChatMessage } from "@/state/conversation";
@@ -83,6 +84,15 @@ function SttStreamRequestMessageBase({
             messageId={message.id}
           />
         </div>
+
+        {/* Playback button for completed URL/file streams */}
+        {message.status === "done" && (isUrlStream || isFileStream) && (
+          <SourcePlaybackButton
+            messageId={message.id}
+            sourceUrl={message.sourceUrl}
+            audioBlobUrl={message.audioBlobUrl}
+          />
+        )}
 
         {/* Error message display */}
         {message.status === "error" && message.error && (
