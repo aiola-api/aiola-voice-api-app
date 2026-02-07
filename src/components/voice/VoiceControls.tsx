@@ -122,6 +122,11 @@ export function VoiceControls() {
 
   // Compute microphone state based on connection and recording state
   const computedMicrophoneState = (() => {
+    // If URL streaming is active, don't override the state - let URL streaming control it
+    if (audio.currentAudioSource === "url") {
+      return audio.microphoneState;
+    }
+
     if (audio.isRecording) return "connected";
     if (preparingMic) return "preparingMic";
     // Only show connecting state for microphone-specific operations, not general connection state

@@ -84,6 +84,18 @@
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
 }
 
+/* Streaming state - green for URL streaming */
+.voice-controls__mic-button.voice-controls__mic-button--streaming {
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+}
+
+.voice-controls__mic-button.voice-controls__mic-button--streaming:hover {
+  background-color: #059669 !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5);
+}
+
 .voice-controls__connecting-indicator {
   position: relative;
   width: 100%;

@@ -2,13 +2,24 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import { useRecoilState } from "recoil";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   IconFileUpload,
 } from "@tabler/icons-react";
 import { conversationState, type ChatMessage } from "@/state/conversation";
 import { settingsState, type SettingsState } from "@/state/settings";
 import { useSTT } from "@/hooks/useSTT";
+import { useBufferStreamPipeline } from "@/hooks/useBufferStreamPipeline";
+import { useAudioSourceLoader } from "@/hooks/useAudioSourceLoader";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
+import { StreamSourcePanel } from "./StreamSourcePanel";
 import "./UploadDropzone.css";
 
 // Helper function to get current environment settings
@@ -35,8 +46,11 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
   const currentSettings = getCurrentSettings(settings);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { transcribeFile } = useSTT();
+  const { startBufferStream, stopBufferStream, isStreaming: isBufferStreaming } = useBufferStreamPipeline();
+  const loader = useAudioSourceLoader();
 
   const acceptedTypes = useMemo(() => [".wav", ".mp3", ".mp4"], []);
   const maxFileSize = useMemo(() => 50 * 1024 * 1024, []); // 50MB
@@ -68,7 +82,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
       // Generate unique conversation session ID for file upload
       const uploadSessionId = `upload_${Date.now()}_${Math.random()
         .toString(36)
-        .substr(2, 6)}`;
+        .substring(2, 8)}`;
 
       // Create user message for file upload
       const userMessage: ChatMessage = {
@@ -179,31 +193,112 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
     }
   }, [handleFileSelect]);
 
+  // Stream handlers (URL or local file)
+  const handleStartStream = useCallback(async (source: string | File) => {
+    if (!currentSettings.apiKey) {
+      toast.error("Please configure your API key first");
+      return;
+    }
+
+    try {
+      const result = typeof source === "string"
+        ? await loader.loadFromUrl(source)
+        : await loader.loadFromFile(source);
+
+      setDialogOpen(false);
+
+      // Get keywords and schema values from settings
+      const keywords = currentSettings.stt.keywords || [];
+      const keywordsObj: Record<string, string> = {};
+      keywords.forEach((keyword: string) => {
+        keywordsObj[keyword] = keyword;
+      });
+      const schemaValues = currentSettings.stt.schemaValues || {};
+
+      startBufferStream(result.arrayBuffer, result.metadata, keywordsObj, schemaValues);
+    } catch {
+      // Error is already set in loader state
+    }
+  }, [currentSettings.apiKey, currentSettings.stt.keywords, currentSettings.stt.schemaValues, loader, startBufferStream]);
+
+  const handleStopStream = useCallback(() => {
+    stopBufferStream();
+  }, [stopBufferStream]);
+
   return (
-    <div 
-      className={`${componentClassName("UploadDropzone", "upload-dropzone")} ${isDragOver ? "drag-over" : ""}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={acceptedTypes.join(",")}
-        onChange={handleFileInputChange}
-        className="upload-dropzone__file-input"
-      />
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isUploading || isBufferStreaming}
+          className={componentClassName("UploadDropzone", "upload-dropzone__trigger-button")}
+        >
+          <IconFileUpload className="upload-dropzone__upload-icon" />
+        </Button>
+      </DialogTrigger>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isUploading}
-        className="upload-dropzone__upload-button"
-      >
-        <IconFileUpload className="upload-dropzone__upload-icon" />
-      </Button>
+      <DialogContent className="sm:max-w-[600px] upload-dropzone-dialog">
+        <DialogHeader>
+          <DialogTitle>Transcribe or Stream Audio</DialogTitle>
+        </DialogHeader>
 
-    </div>
+        <Tabs defaultValue="file" className="mt-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="file">Transcribe File</TabsTrigger>
+            <TabsTrigger value="stream">Stream File</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="file" className="mt-4 space-y-4">
+            <div
+              className={`upload-dropzone__dropzone ${isDragOver ? "drag-over" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={acceptedTypes.join(",")}
+                onChange={handleFileInputChange}
+                className="upload-dropzone__file-input"
+              />
+
+              <div className="upload-dropzone__dropzone-content">
+                <IconFileUpload size={48} className="upload-dropzone__dropzone-icon" />
+                <h3 className="upload-dropzone__dropzone-title">
+                  Drop audio file here
+                </h3>
+                <p className="upload-dropzone__dropzone-description">
+                  or click to browse
+                </p>
+                <p className="upload-dropzone__dropzone-hint">
+                  Supported: {acceptedTypes.join(", ")} (max {Math.round(maxFileSize / 1024 / 1024)}MB)
+                </p>
+              </div>
+
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="upload-dropzone__browse-button"
+              >
+                Browse Files
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="stream" className="mt-4 space-y-4">
+            <StreamSourcePanel
+              onStartStream={handleStartStream}
+              onStopStream={handleStopStream}
+              isStreaming={isBufferStreaming}
+              error={loader.error}
+              status={loader.status}
+              validateUrl={loader.validateUrl}
+            />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -20,7 +20,7 @@ import { ConnectTab } from "./tabs/ConnectTab";
 import { STTTab } from "./tabs/STTTab";
 import { TTSTab } from "./tabs/TTSTab";
 import { getCurrentEnvironmentSettings } from "./shared/utils";
-import { type STTLanguageCode } from "@/state/settings";
+import { type STTLanguageCode, DEFAULT_CONNECTION_SETTINGS } from "@/state/settings";
 
 interface ConfigDialogProps {
   open: boolean;
@@ -168,22 +168,32 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       return;
     }
 
-    if (currentEnv === "prod") {
-      if (!tempSettings.prod.connection.prefix?.trim()) {
-        toast.error("Prefix is required for PROD environment");
-        return;
-      }
+    // Ensure prod URLs fall back to defaults when no prefix is provided
+    let effectiveSettings = tempSettings;
+    if (currentEnv === "prod" && !tempSettings.prod.connection.prefix?.trim()) {
+      effectiveSettings = {
+        ...tempSettings,
+        prod: {
+          ...tempSettings.prod,
+          connection: {
+            ...tempSettings.prod.connection,
+            prefix: "",
+            baseUrl: DEFAULT_CONNECTION_SETTINGS.prod.baseUrl,
+            authBaseUrl: DEFAULT_CONNECTION_SETTINGS.prod.authBaseUrl,
+          },
+        },
+      };
     }
 
     // Always save settings to the global state and localStorage first
     // This ensures that even if connection fails, the settings are remembered
     const settingsToSave = {
-      ...tempSettings,
+      ...effectiveSettings,
       [currentEnv]: {
-        ...tempSettings[currentEnv],
+        ...effectiveSettings[currentEnv],
         stt: {
-          ...tempSettings[currentEnv].stt,
-          rememberFlowid: tempSettings[currentEnv].stt.rememberFlowid,
+          ...effectiveSettings[currentEnv].stt,
+          rememberFlowid: effectiveSettings[currentEnv].stt.rememberFlowid,
         },
       },
     };
