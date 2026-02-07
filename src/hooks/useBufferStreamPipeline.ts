@@ -141,11 +141,13 @@ export function useBufferStreamPipeline() {
 
         // Update audio state - set connecting for visual feedback
         // Use "url" source for both URL and file streaming to keep VoiceControls compatible
+        // Signal mic to stop if it's recording (only one stream at a time)
         setAudio((prev) => ({
           ...prev,
           currentAudioSource: "url",
           streamingUrl: metadata.sourceUrl || metadata.sourceFileName || null,
           microphoneState: "connecting",
+          micStopRequested: prev.isRecording ? Date.now() : prev.micStopRequested,
         }));
 
         // Initialize audio context and worklet
@@ -487,6 +489,17 @@ export function useBufferStreamPipeline() {
   useEffect(() => {
     stopStreamingRef.current = stopBufferStream;
   }, [stopBufferStream]);
+
+  // Watch for external stop signal from VoiceControls
+  useEffect(() => {
+    if (audio.bufferStreamStopRequested > 0) {
+      if (audio.currentAudioSource === "url") {
+        stopBufferStream();
+      }
+      // Always reset signal (even if stream already ended naturally)
+      setAudio((prev) => ({ ...prev, bufferStreamStopRequested: 0 }));
+    }
+  }, [audio.bufferStreamStopRequested, audio.currentAudioSource, stopBufferStream, setAudio]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -5,6 +5,7 @@ import {
   IconMicrophone,
   IconMicrophoneOff,
   IconMicrophoneFilled,
+  IconPlayerStopFilled,
 } from "@tabler/icons-react";
 import { audioState } from "@/state/audio";
 import { conversationState, type ChatMessage } from "@/state/conversation";
@@ -196,6 +197,19 @@ export function VoiceControls() {
     sessionId,
     setAudio,
   ]);
+
+  // Watch for external mic-stop signal from buffer pipeline (file streaming started)
+  useEffect(() => {
+    if (audio.micStopRequested > 0) {
+      if (audio.isRecording) {
+        console.log("Mic stop requested by buffer pipeline, stopping recording...");
+        stopRecording();
+      }
+      // Always reset signal (even if mic already stopped naturally)
+      setAudio((prev) => ({ ...prev, micStopRequested: 0 }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.micStopRequested]);
 
   // Refs for audio processing
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -539,6 +553,14 @@ export function VoiceControls() {
     if (!currentSettings.apiKey) {
       toast.error("Please configure your API key first");
       return;
+    }
+
+    // Stop any active buffer stream before starting mic (one stream at a time)
+    if (audio.currentAudioSource === "url") {
+      console.log("Stopping active buffer stream before starting mic...");
+      setAudio((prev) => ({ ...prev, bufferStreamStopRequested: Date.now() }));
+      // Brief wait for the buffer pipeline to clean up
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     try {
@@ -1475,6 +1497,13 @@ export function VoiceControls() {
       isRecording: audio.isRecording,
     });
 
+    // If buffer streaming or connecting (file/URL active), signal stop
+    if (audio.currentAudioSource === "url") {
+      console.log("Stop buffer stream requested via mic button");
+      setAudio((prev) => ({ ...prev, bufferStreamStopRequested: Date.now() }));
+      return;
+    }
+
     // If currently recording (connected state), stop recording and go to ready state
     if (computedMicrophoneState === "connected") {
       console.log("🔴 Currently connected/recording, stopping...");
@@ -1530,14 +1559,40 @@ export function VoiceControls() {
       currentSettings.stt.language as STTLanguageCode
     );
 
+    // Buffer stream active (connecting or streaming) — show stop icon
+    const isBufferStreamActive = audio.currentAudioSource === "url";
+
     switch (displayMicrophoneState) {
       case "connecting":
+        if (isBufferStreamActive) {
+          // Buffer stream connecting — show stop icon with loading animation
+          return (
+            <div className="voice-controls__mic-container">
+              <div className="voice-controls__connecting-indicator">
+                <div className="voice-controls__connecting-dot--white" />
+              </div>
+              <IconPlayerStopFilled className="voice-controls__mic-icon--connecting" />
+              <div className="voice-controls__language-indicator">
+                {languageShortLabel}
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="voice-controls__mic-container">
             <div className="voice-controls__connecting-indicator">
               <div className="voice-controls__connecting-dot" />
             </div>
             <IconMicrophone className="voice-controls__mic-icon--connecting" />
+            <div className="voice-controls__language-indicator">
+              {languageShortLabel}
+            </div>
+          </div>
+        );
+      case "streaming":
+        return (
+          <div className="voice-controls__mic-container">
+            <IconPlayerStopFilled className="voice-controls__mic-icon--connected" />
             <div className="voice-controls__language-indicator">
               {languageShortLabel}
             </div>
@@ -1594,11 +1649,17 @@ export function VoiceControls() {
     const baseClass = "voice-controls__mic-button";
     const stateClass = (() => {
       switch (displayMicrophoneState) {
+        case "streaming":
+          return "voice-controls__mic-button--streaming";
         case "connected":
           return "voice-controls__mic-button--connected";
         case "ready":
           return "voice-controls__mic-button--ready";
         case "connecting":
+          // Buffer stream connecting uses red/streaming style
+          if (audio.currentAudioSource === "url") {
+            return "voice-controls__mic-button--streaming";
+          }
           return "voice-controls__mic-button--connecting";
         case "preparingMic":
           return "voice-controls__mic-button--preparingMic";

@@ -37,6 +37,10 @@ export interface AudioState {
   currentAudioElement?: HTMLAudioElement | null;
   currentAudioSource: AudioSource;
   streamingUrl?: string | null;
+  /** Set to Date.now() by VoiceControls to signal useBufferStreamPipeline to stop */
+  bufferStreamStopRequested: number;
+  /** Set to Date.now() by useBufferStreamPipeline to signal VoiceControls to stop mic */
+  micStopRequested: number;
 }
 
 export const audioState = atom<AudioState>({
@@ -59,5 +63,7 @@ export const audioState = atom<AudioState>({
     currentAudioElement: null,
     currentAudioSource: "idle",
     streamingUrl: null,
+    bufferStreamStopRequested: 0,
+    micStopRequested: 0,
   },
 });
