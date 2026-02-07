@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   IconWorldWww,
   IconFile,
@@ -6,6 +6,7 @@ import {
   IconAlertCircle,
   IconPlayerPlay,
   IconPlayerStop,
+  IconPlayerPause,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,13 @@ const PREDEFINED_URLS = [
 
 const ACCEPTED_EXTENSIONS = ".mp3,.wav,.mp4,.m4a,.ogg,.flac,.webm";
 
+function formatTime(time: number) {
+  if (isNaN(time) || !isFinite(time)) return "0:00";
+  const m = Math.floor(time / 60);
+  const s = Math.floor(time % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function StreamSourcePanel({
   onStartStream,
   onStopStream,
@@ -44,6 +52,14 @@ export function StreamSourcePanel({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Preview player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewBlobUrlRef = useRef<string | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
+
   // Validate URL on change
   useEffect(() => {
     if (url.trim() === "") {
@@ -53,7 +69,127 @@ export function StreamSourcePanel({
     setIsUrlValid(validateUrl(url));
   }, [url, validateUrl]);
 
+  // --- Preview player logic ---
+
+  const destroyPreview = useCallback(() => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewBlobUrlRef.current) {
+      URL.revokeObjectURL(previewBlobUrlRef.current);
+      previewBlobUrlRef.current = null;
+    }
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, []);
+
+  // Reset preview when source input changes or streaming starts
+  useEffect(() => {
+    destroyPreview();
+  }, [sourceType, url, selectedFile, isStreaming, destroyPreview]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      if (previewBlobUrlRef.current) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+      }
+    };
+  }, []);
+
+  const getPreviewSrc = useCallback((): string | null => {
+    if (sourceType === "url" && isUrlValid) return url;
+    if (sourceType === "file" && selectedFile) {
+      if (!previewBlobUrlRef.current) {
+        previewBlobUrlRef.current = URL.createObjectURL(selectedFile);
+      }
+      return previewBlobUrlRef.current;
+    }
+    return null;
+  }, [sourceType, isUrlValid, url, selectedFile]);
+
+  /** Wire all listeners directly on the audio element (avoids useEffect race) */
+  const attachListeners = useCallback((audio: HTMLAudioElement) => {
+    audio.addEventListener("timeupdate", () => {
+      setCurrentTime(audio.currentTime);
+    });
+    audio.addEventListener("loadedmetadata", () => {
+      setDuration(audio.duration);
+    });
+    audio.addEventListener("durationchange", () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    });
+    audio.addEventListener("ended", () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    });
+    audio.addEventListener("error", () => {
+      destroyPreview();
+    });
+  }, [destroyPreview]);
+
+  const handlePlayPause = async () => {
+    // Pause
+    if (isPlaying && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    // Resume existing audio element
+    if (!isPlaying && previewAudioRef.current && previewAudioRef.current.src) {
+      try {
+        await previewAudioRef.current.play();
+        setIsPlaying(true);
+      } catch {
+        destroyPreview();
+      }
+      return;
+    }
+
+    // Create new audio element with listeners attached before play()
+    const src = getPreviewSrc();
+    if (!src) return;
+
+    const audio = new Audio(src);
+    attachListeners(audio);
+    previewAudioRef.current = audio;
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch {
+      destroyPreview();
+    }
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!previewAudioRef.current || !progressRef.current || !duration) return;
+    const rect = progressRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const newTime = pct * duration;
+    previewAudioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const canPreview =
+    !isStreaming &&
+    (sourceType === "url" ? isUrlValid : !!selectedFile);
+
+  const showPlayer = canPreview || isPlaying;
+  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // --- Stream logic ---
+
   const handleStartStream = () => {
+    destroyPreview();
     if (sourceType === "url" && isUrlValid && !isStreaming) {
       onStartStream(url);
     } else if (sourceType === "file" && selectedFile && !isStreaming) {
@@ -80,8 +216,6 @@ export function StreamSourcePanel({
         return "Fetching audio file...";
       case "reading":
         return "Reading file...";
-      case "ready":
-        return "Ready to stream";
       default:
         return "";
     }
@@ -200,6 +334,41 @@ export function StreamSourcePanel({
               Stream
             </Button>
           )}
+        </div>
+      )}
+
+      {/* Preview Player */}
+      {showPlayer && (
+        <div className="stream-preview-player">
+          <button
+            type="button"
+            className="stream-preview-player__play-btn"
+            onClick={handlePlayPause}
+            title={isPlaying ? "Pause" : "Play preview"}
+          >
+            {isPlaying ? (
+              <IconPlayerPause size={16} />
+            ) : (
+              <IconPlayerPlay size={16} />
+            )}
+          </button>
+
+          <div className="stream-preview-player__progress">
+            <div
+              className="stream-preview-player__track"
+              ref={progressRef}
+              onClick={handleProgressClick}
+            >
+              <div
+                className="stream-preview-player__fill"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          <span className="stream-preview-player__time">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
         </div>
       )}
 
