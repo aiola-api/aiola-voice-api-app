@@ -81,6 +81,7 @@ export function useBufferStreamPipeline() {
 
   /**
    * Connect audio worklet output to WebSocket connection
+   * Also captures amplitude data for waveform visualization
    */
   const connectWorkletToConnection = useCallback(
     (audioWorkletNode: AudioWorkletNode, connection: StreamConnection) => {
@@ -88,9 +89,26 @@ export function useBufferStreamPipeline() {
         if (event.data.audio_data) {
           connection.send(event.data.audio_data);
         }
+        // Forward amplitude data to the stream message for waveform rendering
+        if (event.data.amplitude && currentMessageIdRef.current) {
+          const amplitudeData = event.data.amplitude;
+          const messageId = currentMessageIdRef.current;
+          setConversation((prev) => ({
+            ...prev,
+            messages: prev.messages.map((msg) => {
+              if (msg.id !== messageId) return msg;
+              const newHistory = [...(msg.amplitudeHistory || []), amplitudeData];
+              return {
+                ...msg,
+                amplitudeData,
+                amplitudeHistory: newHistory.slice(-50),
+              };
+            }),
+          }));
+        }
       };
     },
-    []
+    [setConversation]
   );
 
   /**
