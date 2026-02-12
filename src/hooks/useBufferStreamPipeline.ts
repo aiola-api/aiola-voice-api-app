@@ -34,7 +34,9 @@ export function useBufferStreamPipeline() {
   const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track current connection instance to avoid stale closure issues
   const activeConnectionRef = useRef<StreamConnection | null>(null);
-  // Track registered handlers so we can remove only ours (not VoiceControls') before re-registering
+  // When true, AudioContext is intentionally paused — skip auto-resume
+  const intentionalPauseRef = useRef(false);
+  // Track registered handlers so we can remove ours before re-registering
   const handlersRef = useRef<{
     onConnect: (...args: unknown[]) => void;
     onTranscript: (...args: unknown[]) => void;
@@ -63,10 +65,13 @@ export function useBufferStreamPipeline() {
       latencyHint: "interactive",
     });
 
-    // Monitor AudioContext state changes — auto-resume if suspended under CPU pressure
+    // Monitor AudioContext state changes — auto-resume only if not intentionally paused
     ctx.onstatechange = () => {
       console.log(`🔊 [BufferPipeline] AudioContext state changed: ${ctx.state}`);
-      if (ctx.state === "suspended" || ctx.state === "interrupted") {
+      if (
+        (ctx.state === "suspended" || ctx.state === "interrupted") &&
+        !intentionalPauseRef.current
+      ) {
         console.log("⚠️ [BufferPipeline] AudioContext suspended/interrupted, attempting resume...");
         ctx.resume().catch((err) => {
           console.error("❌ [BufferPipeline] Failed to resume AudioContext:", err);
@@ -199,7 +204,6 @@ export function useBufferStreamPipeline() {
         activeConnectionRef.current = connection;
 
         // Remove stale buffer-pipeline handlers from previous streams to prevent duplicates
-        // (only remove our handlers, not VoiceControls' handlers on the shared connection)
         if (handlersRef.current) {
           const prev = handlersRef.current;
           connection.off("connect", prev.onConnect);
@@ -296,44 +300,37 @@ export function useBufferStreamPipeline() {
           setupBufferPipeline();
         };
 
+        // Per-session transcript: only fires when this buffer stream is active
         const onTranscript = (data: unknown) => {
-          console.log("[BufferPipeline] 'transcript' event fired!", data);
-          const { transcript, is_final } = data as { transcript: string; is_final?: boolean };
-          console.log("[BufferPipeline] transcript guard check - activeRef===this:", activeConnectionRef.current === thisConnection, "messageIdRef:", currentMessageIdRef.current);
-          if (activeConnectionRef.current !== thisConnection) {
-            console.warn("[BufferPipeline] BLOCKED: activeConnectionRef doesn't match thisConnection");
-            return;
-          }
-          if (!currentMessageIdRef.current) {
-            console.warn("[BufferPipeline] BLOCKED: currentMessageIdRef is null (stopBufferStream already ran?)");
-            return;
-          }
+          if (activeConnectionRef.current !== thisConnection) return;
+          if (!currentMessageIdRef.current) return;
 
+          const { transcript, is_final } = data as {
+            transcript?: string;
+            is_final?: boolean;
+          };
+
+          // Accumulate transcript within this stream's session
           const activeSessionId = currentSessionIdRef.current;
-          const transcriptionId = `transcription_${activeSessionId}`;
-
-          // Create or update a visible Transcription response message
-          // (SttStreamRequestMessage doesn't render content, so we need a separate Transcription message)
-          setConversation((prev) => {
-            const existingTranscription = prev.messages.find(
-              (msg) => msg.id === transcriptionId
-            );
-
-            if (existingTranscription) {
-              // Append to existing transcription message
-              const newContent = existingTranscription.content
-                ? `${existingTranscription.content} ${transcript}`
-                : transcript;
-              return {
-                ...prev,
-                messages: prev.messages.map((msg) =>
-                  msg.id === transcriptionId
-                    ? { ...msg, content: newContent, createdAt: Date.now() }
-                    : msg
-                ),
-              };
-            } else {
-              // Create new transcription message
+          if (transcript && activeSessionId) {
+            const transcriptionId = `transcript_${activeSessionId}`;
+            setConversation((prev) => {
+              const existing = prev.messages.find(
+                (msg) => msg.id === transcriptionId
+              );
+              if (existing) {
+                const newContent = existing.content
+                  ? `${existing.content} ${transcript}`
+                  : transcript;
+                return {
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === transcriptionId
+                      ? { ...msg, content: newContent, createdAt: Date.now() }
+                      : msg
+                  ),
+                };
+              }
               const transcriptMessage: ChatMessage = {
                 id: transcriptionId,
                 role: "assistant",
@@ -341,16 +338,15 @@ export function useBufferStreamPipeline() {
                 createdAt: Date.now(),
                 kind: "Transcription",
                 status: "done",
-                conversation_session_id: activeSessionId || "",
+                conversation_session_id: activeSessionId,
               };
               return {
                 ...prev,
                 messages: [...prev.messages, transcriptMessage],
               };
-            }
-          });
+            });
+          }
 
-          // If final, stop streaming
           if (is_final) {
             if (completionTimeoutRef.current) {
               clearTimeout(completionTimeoutRef.current);
@@ -362,29 +358,57 @@ export function useBufferStreamPipeline() {
           }
         };
 
+        // Per-session structured: only fires when this buffer stream is active
         const onStructured = (data: unknown) => {
-          console.log("[BufferPipeline] 'structured' event fired!", data);
           if (activeConnectionRef.current !== thisConnection) return;
           if (!currentSessionIdRef.current) return;
 
+          const rawData = data as { results?: Record<string, unknown> };
+          const results = rawData?.results;
+          if (!results || typeof results !== "object") return;
+
           const activeSessionId = currentSessionIdRef.current;
-          const structuredData = data as Record<string, unknown>;
+          const structuredId = `structured_${activeSessionId}`;
 
-          const structuredMessage: ChatMessage = {
-            id: `structured_${Date.now()}`,
-            role: "assistant",
-            content: `Structured data received (${Object.keys((structuredData?.form as Record<string, unknown>) || {}).length} fields)`,
-            createdAt: Date.now(),
-            kind: "Structured",
-            status: "done",
-            conversation_session_id: activeSessionId,
-            structuredData,
-          };
+          setConversation((prev) => {
+            const existing = prev.messages.find(
+              (msg) => msg.id === structuredId
+            );
+            if (existing) {
+              const mergedData = {
+                ...existing.structuredData,
+                ...results,
+              };
+              return {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === structuredId
+                    ? {
+                        ...msg,
+                        structuredData: mergedData,
+                        content: `Structured data updated (${Object.keys(mergedData).length} fields)`,
+                        createdAt: Date.now(),
+                      }
+                    : msg
+                ),
+              };
+            }
 
-          setConversation((prev) => ({
-            ...prev,
-            messages: [...prev.messages, structuredMessage],
-          }));
+            const structuredMessage: ChatMessage = {
+              id: structuredId,
+              role: "assistant",
+              content: `Structured data received (${Object.keys(results).length} fields)`,
+              createdAt: Date.now(),
+              kind: "Structured",
+              status: "done",
+              conversation_session_id: activeSessionId,
+              structuredData: results,
+            };
+            return {
+              ...prev,
+              messages: [...prev.messages, structuredMessage],
+            };
+          });
         };
 
         const onError = (err: unknown) => {
@@ -488,6 +512,7 @@ export function useBufferStreamPipeline() {
     }
 
     // Clear refs
+    intentionalPauseRef.current = false;
     currentMessageIdRef.current = null;
     currentSessionIdRef.current = null;
     connectionRef.current = null;
@@ -522,6 +547,29 @@ export function useBufferStreamPipeline() {
     streamStartTimeRef.current = 0;
   }, [setAudio, setConversation, isOnline, sessionId]);
 
+  /**
+   * Pause streaming: suspends AudioContext so audio playback and
+   * WebSocket data sending both freeze.
+   */
+  const pauseBufferStream = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state !== "running") return;
+    intentionalPauseRef.current = true;
+    audioContextRef.current.suspend().then(() => {
+      setAudio((prev) => ({ ...prev, microphoneState: "paused" }));
+    });
+  }, [setAudio]);
+
+  /**
+   * Resume streaming: resumes AudioContext so playback and data sending continue.
+   */
+  const resumeBufferStream = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state !== "suspended") return;
+    intentionalPauseRef.current = false;
+    audioContextRef.current.resume().then(() => {
+      setAudio((prev) => ({ ...prev, microphoneState: "streaming" }));
+    });
+  }, [setAudio]);
+
   // Store stopBufferStream in ref for use in callbacks
   useEffect(() => {
     stopStreamingRef.current = stopBufferStream;
@@ -538,6 +586,20 @@ export function useBufferStreamPipeline() {
     }
   }, [audio.bufferStreamStopRequested, audio.currentAudioSource, stopBufferStream, setAudio]);
 
+  // Watch for external pause/resume toggle signal from VoiceControls
+  useEffect(() => {
+    if (audio.bufferStreamPauseRequested > 0) {
+      if (audio.currentAudioSource === "url") {
+        if (audio.microphoneState === "paused") {
+          resumeBufferStream();
+        } else {
+          pauseBufferStream();
+        }
+      }
+      setAudio((prev) => ({ ...prev, bufferStreamPauseRequested: 0 }));
+    }
+  }, [audio.bufferStreamPauseRequested, audio.currentAudioSource, audio.microphoneState, pauseBufferStream, resumeBufferStream, setAudio]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -551,7 +613,10 @@ export function useBufferStreamPipeline() {
   return {
     startBufferStream,
     stopBufferStream,
+    pauseBufferStream,
+    resumeBufferStream,
     isStreaming: audio.currentAudioSource === "url",
+    isPaused: audio.microphoneState === "paused",
     streamingUrl: audio.streamingUrl,
   };
 }

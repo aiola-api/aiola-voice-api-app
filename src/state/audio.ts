@@ -6,7 +6,8 @@ export type MicrophoneState =
   | "connected"
   | "connecting"
   | "preparingMic"
-  | "streaming";
+  | "streaming"
+  | "paused";
 
 export type AudioSource = "microphone" | "url" | "idle";
 
@@ -39,6 +40,8 @@ export interface AudioState {
   streamingUrl?: string | null;
   /** Set to Date.now() by VoiceControls to signal useBufferStreamPipeline to stop */
   bufferStreamStopRequested: number;
+  /** Set to Date.now() by VoiceControls to signal useBufferStreamPipeline to pause/resume */
+  bufferStreamPauseRequested: number;
   /** Set to Date.now() by useBufferStreamPipeline to signal VoiceControls to stop mic */
   micStopRequested: number;
 }
@@ -64,6 +67,7 @@ export const audioState = atom<AudioState>({
     currentAudioSource: "idle",
     streamingUrl: null,
     bufferStreamStopRequested: 0,
+    bufferStreamPauseRequested: 0,
     micStopRequested: 0,
   },
 });

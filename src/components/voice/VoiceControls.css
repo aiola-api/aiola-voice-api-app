@@ -84,7 +84,7 @@
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
 }
 
-/* Streaming state - red with stop icon, same as recording */
+/* Streaming state - red with pause icon */
 .voice-controls__mic-button.voice-controls__mic-button--streaming {
   background-color: #ef4444 !important;
   border-color: #ef4444 !important;
@@ -94,6 +94,18 @@
 .voice-controls__mic-button.voice-controls__mic-button--streaming:hover {
   background-color: #dc2626 !important;
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5);
+}
+
+/* Paused state - muted with play icon */
+.voice-controls__mic-button.voice-controls__mic-button--paused {
+  background-color: #334155 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.voice-controls__mic-button.voice-controls__mic-button--paused:hover {
+  background-color: #1e293b !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3);
 }
 
 .voice-controls__connecting-indicator {
