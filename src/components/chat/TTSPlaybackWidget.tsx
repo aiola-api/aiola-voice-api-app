@@ -13,6 +13,9 @@ import { settingsState, type SettingsState } from "@/state/settings";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+
+const TAG = "TTSPlaybackWidget";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -128,7 +131,7 @@ export function TTSPlaybackWidget({
       });
 
       audioElement.addEventListener("error", (e) => {
-        console.error("Audio playback error:", e);
+        logger.error(TAG, "Audio playback error:", e);
         toast.error("Audio playback failed");
         setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
@@ -138,7 +141,7 @@ export function TTSPlaybackWidget({
       setAudio((prev) => ({ ...prev, playingMessageId: messageId, currentAudioElement: audioElement }));
       await audioElement.play();
     } catch (error) {
-      console.error("TTS Error:", error);
+      logger.error(TAG, "TTS error:", error);
       toast.error("Text-to-speech failed");
     } finally {
       setIsLoading(false);

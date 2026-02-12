@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
+
+const TAG = "CopyButton";
 
 interface CopyButtonProps {
   value: string;
@@ -23,7 +26,7 @@ export function CopyButton({ value }: CopyButtonProps) {
       
       toast.success(`Copied: ${displayValue}`);
     } catch (err) {
-      console.error("Failed to copy:", err);
+      logger.error(TAG, "Failed to copy:", err);
       toast.error("Failed to copy to clipboard");
     }
   };

@@ -6,6 +6,9 @@ import { audioState } from "@/state/audio";
 import { settingsState, type SettingsState } from "@/state/settings";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
+
+const TAG = "TTSPlaybackButton";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -89,12 +92,12 @@ export function TTSPlaybackButton({
       
       // Use cached audio if available, otherwise generate fresh
       if (audioBlob) {
-        console.log("TTS Button: Using cached audio");
+        logger.debug(TAG, "Using cached audio");
         blob = audioBlob;
       } else {
-        console.log("TTS Button: Generating fresh audio for text:", text.substring(0, 100) + "...");
+        logger.debug(TAG, "Generating fresh audio");
         blob = await generateTTS(text);
-        console.log("TTS Button: Audio generated successfully", { size: blob.size });
+        logger.debug(TAG, "Audio generated", { size: blob.size });
         // Cache the blob after successful generation
         setAudioBlob(blob);
       }
@@ -122,7 +125,7 @@ export function TTSPlaybackButton({
 
             audioElement.addEventListener("error", (e) => {
               clearTimeout(timeout);
-              console.error("Audio loading error:", e);
+              logger.error(TAG, "Audio loading error:", e);
               reject(new Error("Audio failed to load"));
             }, { once: true });
 
@@ -135,7 +138,7 @@ export function TTSPlaybackButton({
           if (retryCount > maxRetries) {
             throw error; // Re-throw if we've exhausted retries
           }
-          console.log(`TTS: Audio load attempt ${retryCount} failed, retrying...`);
+          logger.debug(TAG, `Audio load attempt ${retryCount} failed, retrying`);
           // Small delay before retry
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -147,7 +150,7 @@ export function TTSPlaybackButton({
       });
 
       audioElement.addEventListener("error", (e) => {
-        console.error("Audio playback error:", e);
+        logger.error(TAG, "Audio playback error:", e);
         toast.error("Audio playback failed");
         setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
@@ -157,7 +160,7 @@ export function TTSPlaybackButton({
       setAudio((prev) => ({ ...prev, playingMessageId: messageId, currentAudioElement: audioElement }));
       await audioElement.play();
     } catch (error) {
-      console.error("TTS Error:", error);
+      logger.error(TAG, "TTS error:", error);
       
       // Provide more specific error messages
       if (error instanceof Error) {

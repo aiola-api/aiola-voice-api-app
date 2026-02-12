@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useRecoilValue } from "recoil";
 import WaveSurfer from "wavesurfer.js";
 import { conversationState } from "@/state/conversation";
+import { logger } from "@/lib/logger";
+
+const TAG = "VoiceWaveform";
 
 interface VoiceWaveformProps {
   isUser?: boolean;
@@ -64,7 +67,7 @@ export function VoiceWaveform({
       });
 
       wavesurfer.on("error", (error) => {
-        console.error("WaveSurfer error:", error);
+        logger.error(TAG, "WaveSurfer error:", error);
         setIsLoading(false);
       });
 

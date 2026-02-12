@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   IconAdjustmentsAlt,
@@ -5,6 +6,7 @@ import {
   IconCircleFilled,
   IconCopy,
   IconInfoCircle,
+  IconTerminal2,
 } from "@tabler/icons-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -15,8 +17,13 @@ import { conversationState } from "@/state/conversation";
 import { audioState } from "@/state/audio";
 import { componentClassName } from "@/lib/utils";
 import { APP_VERSION, AIOLA_SDK_VERSION } from "@/lib/constants";
+import { logger, type LogLevel } from "@/lib/logger";
 import { QuickVoicePicker } from "@/components/voice/QuickVoicePicker";
 import "./ChatHeader.css";
+
+const TAG = "ChatHeader";
+
+const LOG_LEVEL_CYCLE: LogLevel[] = ["error", "warn", "info", "debug"];
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -44,13 +51,22 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
   const currentSettings = getCurrentSettings(settings);
   const conversation = useRecoilValue(conversationState);
   const audio = useRecoilValue(audioState);
+  const [logLevel, setLogLevel] = useState<LogLevel>(logger.getLevel());
+
+  const cycleLogLevel = useCallback(() => {
+    const currentIndex = LOG_LEVEL_CYCLE.indexOf(logLevel);
+    const nextLevel = LOG_LEVEL_CYCLE[(currentIndex + 1) % LOG_LEVEL_CYCLE.length];
+    logger.setLevel(nextLevel);
+    setLogLevel(nextLevel);
+    toast.success(`Log level: ${nextLevel}`);
+  }, [logLevel]);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast.success(`${label} copied to clipboard`);
     } catch (err) {
-      console.error("Failed to copy:", err);
+      logger.error(TAG, "Failed to copy:", err);
       toast.error("Failed to copy to clipboard");
     }
   };
@@ -202,6 +218,19 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
           </Button>
         </div>
         <div className="chat-header__top-actions">
+          <Tooltip
+            className="chat-header__log-level-toggle"
+            content={`Log level: ${logLevel}`}
+          >
+            <button
+              onClick={cycleLogLevel}
+              className="chat-header__log-level-button"
+              aria-label={`Log level: ${logLevel}. Click to cycle.`}
+            >
+              <IconTerminal2 />
+              <span className="chat-header__log-level-label">{logLevel}</span>
+            </button>
+          </Tooltip>
           <Tooltip
             className="chat-header__version-icon"
             content={`version: ${VERSION}

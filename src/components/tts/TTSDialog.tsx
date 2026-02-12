@@ -14,6 +14,9 @@ import { audioState } from "@/state/audio";
 import { useTTS } from "@/hooks/useTTS";
 import { toast } from "sonner";
 import { IconVolume2, IconVolumeOff, IconLoader2 } from "@tabler/icons-react";
+import { logger } from "@/lib/logger";
+
+const TAG = "TTSDialog";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -82,7 +85,7 @@ export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
       setAudioBlob(blob);
       toast.success("Audio generated successfully");
     } catch (error) {
-      console.error("TTS Generation Error:", error);
+      logger.error(TAG, "TTS generation error:", error);
       toast.error("Failed to generate audio");
     }
   };
@@ -121,7 +124,7 @@ export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
       });
 
       audioElement.addEventListener("error", (e) => {
-        console.error("Audio playback error:", e);
+        logger.error(TAG, "Audio playback error:", e);
         toast.error("Audio playback failed");
         setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
         URL.revokeObjectURL(audioUrl);
@@ -131,7 +134,7 @@ export function TTSDialog({ open, onOpenChange }: TTSDialogProps) {
       setAudio((prev) => ({ ...prev, playingMessageId: dialogId, currentAudioElement: audioElement }));
       await audioElement.play();
     } catch (error) {
-      console.error("Audio Playback Error:", error);
+      logger.error(TAG, "Audio playback error:", error);
       toast.error("Audio playback failed");
       setAudio((prev) => ({ ...prev, playingMessageId: undefined, currentAudioElement: null }));
     }

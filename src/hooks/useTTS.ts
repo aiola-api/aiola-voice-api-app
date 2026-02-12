@@ -2,6 +2,9 @@ import { useRecoilValue } from "recoil";
 import { settingsState, type SettingsState } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback, useState } from "react";
+import { logger } from "@/lib/logger";
+
+const TAG = "TTS";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -29,22 +32,16 @@ export function useTTS() {
     async (text: string, voice?: string): Promise<Blob> => {
       try {
         setIsGenerating(true);
-        console.log("TTS: Starting generation", { text: text.substring(0, 50) + "...", voice });
-        
+        logger.debug(TAG, "Starting generation", { text: text.substring(0, 50) + "...", voice });
+
         const client = await getClient();
-        console.log("TTS: Client obtained");
 
         const currentSettings = getCurrentSettings(settings);
-        console.log("TTS: Settings", { 
-          voice_id: voice || currentSettings.tts.voice,
-          hasApiKey: !!currentSettings.apiKey 
-        });
 
         const audioStream = await client.tts.synthesize({
           text,
           voice_id: (voice || currentSettings.tts.voice) as string,
         });
-        console.log("TTS: Stream obtained");
 
         // Convert stream to blob
         const chunks: Uint8Array[] = [];
@@ -63,8 +60,8 @@ export function useTTS() {
           (acc, chunk) => acc + chunk.length,
           0
         );
-        console.log("TTS: Total audio length", totalLength);
-        
+        logger.debug(TAG, "Total audio length", totalLength);
+
         if (totalLength === 0) {
           throw new Error("No audio data received from TTS service");
         }
@@ -78,14 +75,11 @@ export function useTTS() {
 
         // Create blob with audio/mpeg MIME type
         const blob = new Blob([combined], { type: "audio/mpeg" });
-        console.log("TTS: Blob created", { 
-          size: blob.size, 
-          type: blob.type
-        });
-        
+        logger.debug(TAG, "Blob created", { size: blob.size, type: blob.type });
+
         return blob;
       } catch (error) {
-        console.error("TTS Generation Error:", error);
+        logger.error(TAG, "Generation error:", error);
         throw error;
       } finally {
         setIsGenerating(false);
