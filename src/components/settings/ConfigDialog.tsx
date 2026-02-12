@@ -13,7 +13,10 @@ import { useConnection } from "@/hooks/useConnection";
 import { useSTT } from "@/hooks/useSTT";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import "./ConfigDialog.css";
+
+const TAG = "ConfigDialog";
 
 // Import sub-components
 import { ConnectTab } from "./tabs/ConnectTab";
@@ -75,9 +78,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         ttsVoiceChanged ||
         vadConfigChanged
       ) {
-        console.log(
-          `[checkSettingsChanged] Settings changed detected for ${currentEnvironment} environment:`
-        );
+        logger.debug(TAG, `Settings changed for ${currentEnvironment}`);
       }
 
       return (
@@ -157,7 +158,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       };
       setSettings(updatedSettings);
       localStorage.setItem("aiola-settings", JSON.stringify(updatedSettings));
-      console.log("[ConfigDialog] Language synced immediately (no active session)");
+      logger.debug(TAG, "Language synced immediately (no active session)");
     }
   };
 
@@ -218,10 +219,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       toast.success("Settings saved successfully - Connection verified");
       onOpenChange(false);
     } catch (error) {
-      console.warn(
-        "Connection test failed, but settings were already saved:",
-        error
-      );
+      logger.warn(TAG, "Connection test failed, but settings were already saved:", error);
       toast.warning(
         `Settings saved but connection failed: ${
           error instanceof Error ? error.message : "Unknown error"

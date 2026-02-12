@@ -20,6 +20,9 @@ import { type StreamConnection } from "@/state/connection";
 import { useSTT } from "@/hooks/useSTT";
 import { useConnection } from "@/hooks/useConnection";
 import { toast } from "sonner";
+import { logger, formatError } from "@/lib/logger";
+
+const TAG = "VoiceControls";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -60,43 +63,6 @@ const STT_LANGUAGES: {
 const getLanguageShortLabel = (languageCode: STTLanguageCode): string => {
   const language = STT_LANGUAGES.find((lang) => lang.value === languageCode);
   return language?.shortLabel || languageCode;
-};
-
-// Logging function to display conversation state
-const logConversationState = (
-  messages: ChatMessage[],
-  title: string = "Conversation Update"
-) => {
-  console.group(`📋 ${title}`);
-  console.log(`Total messages: ${messages.length}`);
-
-  const sttMessages = messages.filter((msg) => msg.kind === "STT Stream");
-  const recordingMessages = messages.filter((msg) => msg.isRecording === true);
-
-  console.log(`STT messages: ${sttMessages.length}`);
-  console.log(`Currently recording: ${recordingMessages.length}`);
-
-  messages.forEach((msg, index) => {
-    const isRecording = msg.isRecording ? "🔴" : "⚪";
-    const status = msg.status || "unknown";
-    const kind = msg.kind || "unknown";
-    const duration = msg.durationMs
-      ? `${(msg.durationMs / 1000).toFixed(1)}s`
-      : "0s";
-
-    console.log(
-      `${index + 1}. ${isRecording} [${kind}] ${msg.id.substring(
-        0,
-        20
-      )}... | ${status} | ${duration}`
-    );
-  });
-
-  if (recordingMessages.length > 0) {
-    console.log("🎤 Currently recording:", recordingMessages[0].id);
-  }
-
-  console.groupEnd();
 };
 
 export function VoiceControls() {
@@ -153,7 +119,7 @@ export function VoiceControls() {
 
   // Debug logging for connecting state
   useEffect(() => {
-    console.log("🔍 VoiceControls state:", {
+    logger.debug(TAG, "State:", {
       computedMicrophoneState,
       isConnecting,
       isConnected,
@@ -171,18 +137,14 @@ export function VoiceControls() {
 
   // Sync computed microphone state with audio state
   useEffect(() => {
-    console.log("🔍 Sync effect triggered:", {
+    logger.debug(TAG, "Sync effect:", {
       audioState: audio.microphoneState,
       computedState: computedMicrophoneState,
       isRecording: audio.isRecording,
-      shouldSync: audio.microphoneState !== computedMicrophoneState,
     });
 
     if (audio.microphoneState !== computedMicrophoneState) {
-      console.log("🔄 Syncing audio state with computed state:", {
-        from: audio.microphoneState,
-        to: computedMicrophoneState,
-      });
+      logger.debug(TAG, "Syncing state:", audio.microphoneState, "->", computedMicrophoneState);
       const newSessionId = sessionId || audio.currentSessionId;
 
       setAudio((prev) => ({
@@ -204,7 +166,7 @@ export function VoiceControls() {
   useEffect(() => {
     if (audio.micStopRequested > 0) {
       if (audio.isRecording) {
-        console.log("Mic stop requested by buffer pipeline, stopping recording...");
+        logger.info(TAG, "Mic stop requested by buffer pipeline");
         stopRecording();
       }
       // Always reset signal (even if mic already stopped naturally)
@@ -242,11 +204,6 @@ export function VoiceControls() {
             ? now - sttRequestStartTimeRef.current
             : 0;
 
-        // Debug log to see if timer is running
-        if (newSttRequestElapsedMs > 0 && newSttRequestElapsedMs % 1000 < 100) {
-          console.log(`Timer running: ${newSttRequestElapsedMs}ms`);
-        }
-
         return {
           ...prev,
           elapsedMs: prev.startedAtMs > 0 ? now - prev.startedAtMs : 0,
@@ -259,22 +216,10 @@ export function VoiceControls() {
         currentRecordingMessageIdRef.current &&
         sttRequestStartTimeRef.current > 0
       ) {
-        console.log("🔄 Updating conversation message duration:", {
-          currentMessageId: currentRecordingMessageIdRef.current,
-          sttStartTime: sttRequestStartTimeRef.current,
-          elapsed: now - sttRequestStartTimeRef.current,
-        });
-
         setConversation((convPrev) => ({
           ...convPrev,
           messages: convPrev.messages.map((msg) => {
             if (msg.id === currentRecordingMessageIdRef.current) {
-              console.log(
-                "📝 Updating STT message:",
-                msg.id,
-                "duration:",
-                now - sttRequestStartTimeRef.current
-              );
               return {
                 ...msg,
                 durationMs: now - sttRequestStartTimeRef.current,
@@ -318,13 +263,13 @@ export function VoiceControls() {
       });
       // Only set keywords if there are any (don't send empty event)
       if (Object.keys(keywordsObj).length > 0) {
-        console.log("🔑 Updating keywords dynamically:", keywordsObj);
+        logger.debug(TAG, "Updating keywords dynamically:", keywordsObj);
         try {
           connection.setKeywords(keywordsObj);
           // Update ref immediately to prevent duplicate calls
           lastAppliedKeywordsRef.current = currentKeywordsJson;
         } catch (error) {
-          console.error("❌ Error updating keywords:", error);
+          logger.error(TAG, "Error updating keywords:", error);
         }
       } else {
         // Update ref even if empty to prevent re-checking
@@ -337,24 +282,21 @@ export function VoiceControls() {
     if (currentSchemaValuesJson !== lastAppliedSchemaValuesRef.current) {
       // Only set schema values if there are any (don't send empty event)
       if (Object.keys(schemaValues).length > 0) {
-        console.log("📋 Updating schema values dynamically:", schemaValues);
+        logger.debug(TAG, "Updating schema values dynamically:", schemaValues);
         try {
           // Update ref immediately before async call to prevent duplicate calls
           lastAppliedSchemaValuesRef.current = currentSchemaValuesJson;
           connection.setSchemaValues(schemaValues, (response) => {
             if (response.status === "ok") {
-              console.log("✅ Schema values updated successfully");
+              logger.debug(TAG, "Schema values updated successfully");
             } else {
-              console.warn(
-                "⚠️ Schema values update warning:",
-                response.message
-              );
+              logger.warn(TAG, "Schema values update warning:", response.message);
               // Revert ref on error so it can be retried
               lastAppliedSchemaValuesRef.current = "";
             }
           });
         } catch (error) {
-          console.error("❌ Error updating schema values:", error);
+          logger.error(TAG, "Error updating schema values:", error);
           // Revert ref on error so it can be retried
           lastAppliedSchemaValuesRef.current = "";
         }
@@ -393,7 +335,7 @@ export function VoiceControls() {
   };
 
   const setupAudioPipeline = async (connection: StreamConnection) => {
-    console.log("🎵 Setting up audio pipeline...");
+    logger.info(TAG, "Setting up audio pipeline");
 
     // Update connection state to streaming
     updateConnectionState({
@@ -408,14 +350,9 @@ export function VoiceControls() {
     }
 
     // Update STT request message status to streaming
-    console.log(
-      "🔄 Updating message status to streaming for:",
-      currentRecordingMessageIdRef.current
-    );
     setConversation((prev) => {
       const updatedMessages = prev.messages.map((msg) => {
         if (msg.id === currentRecordingMessageIdRef.current) {
-          console.log("✅ Setting streaming status for message:", msg.id);
           return {
             ...msg,
             status: "streaming" as const,
@@ -423,22 +360,12 @@ export function VoiceControls() {
             isRecording: true,
           };
         } else {
-          if (msg.isRecording) {
-            console.log(
-              "❌ Clearing isRecording for non-current message:",
-              msg.id
-            );
-          }
           return {
             ...msg,
             isRecording: false,
           };
         }
       });
-      logConversationState(
-        updatedMessages,
-        "Message Status Updated to Streaming"
-      );
       return { ...prev, messages: updatedMessages };
     });
 
@@ -496,26 +423,21 @@ export function VoiceControls() {
 
           audioPacketCount++;
           if (audioPacketCount % 50 === 0) {
-            console.log(`🔊 Sent ${audioPacketCount} audio packets`);
+            logger.debug(TAG, `Sent ${audioPacketCount} audio packets`);
           }
         } catch (error) {
           if (audioPacketCount % 100 === 0) {
-            console.error("⚠️ Error sending audio data:", error);
+            logger.error(TAG, "Error sending audio data:", error);
           }
         }
       };
 
       // Connect the audio nodes
       source.connect(audioWorkletNodeRef.current);
-      console.log("✅ Audio pipeline connected");
+      logger.info(TAG, "Audio pipeline connected");
 
       // Update state - transition to connected state
       setAudio((prev) => {
-        console.log("🎯 Setting isRecording to true, current state:", {
-          isRecording: prev.isRecording,
-          microphoneState: prev.microphoneState,
-        });
-
         return {
           ...prev,
           micAllowed: true,
@@ -528,14 +450,10 @@ export function VoiceControls() {
       // Clear preparingMic state as recording has started
       setPreparingMic(false);
 
-      console.log("✅ Recording started successfully", {
-        isRecording: true,
-        currentSessionId: audio.currentSessionId,
-        micAllowed: true,
-      });
+      logger.info(TAG, "Recording started");
     } catch (error) {
-      console.error("❌ Error setting up audio pipeline:", error);
-      toast.error("Failed to set up audio");
+      logger.error(TAG, "Error setting up audio pipeline:", error);
+      toast.error(`Failed to set up audio: ${formatError(error)}`);
 
       // Stop keepalive timer on error
       if (keepaliveTimerRef.current) {
@@ -548,7 +466,7 @@ export function VoiceControls() {
   };
 
   const startRecording = async () => {
-    console.log("🎤 Starting recording...");
+    logger.info(TAG, "Starting recording");
     if (!currentSettings.apiKey) {
       toast.error("Please configure your API key first");
       return;
@@ -556,7 +474,7 @@ export function VoiceControls() {
 
     // Stop any active buffer stream before starting mic (one stream at a time)
     if (audio.currentAudioSource === "url") {
-      console.log("Stopping active buffer stream before starting mic...");
+      logger.debug(TAG, "Stopping active buffer stream before starting mic");
       setAudio((prev) => ({ ...prev, bufferStreamStopRequested: Date.now() }));
       // Brief wait for the buffer pipeline to clean up
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -586,11 +504,7 @@ export function VoiceControls() {
         isRecording: true,
       };
 
-      console.log(
-        "🎤 Creating new STT message:",
-        messageId,
-        "with isRecording: true"
-      );
+      logger.debug(TAG, "Creating STT message:", messageId);
 
       // Set the current recording message ID FIRST
       currentRecordingMessageIdRef.current = messageId;
@@ -608,8 +522,6 @@ export function VoiceControls() {
         }));
 
         const newMessages = [...updatedMessages, sttRequestMessage];
-        logConversationState(newMessages, "New STT Message Created");
-
         return {
           ...prev,
           messages: newMessages,
@@ -619,18 +531,11 @@ export function VoiceControls() {
       // Start the STT request timer
       sttRequestStartTimeRef.current = Date.now();
 
-      console.log(
-        "💬 Added STT request message to chat:",
-        sttRequestMessage.id,
-        "Timer started at:",
-        sttRequestStartTimeRef.current
-      );
-
       // Set preparingMic state after AudioContext setup but before recording starts
       setPreparingMic(true);
 
       // STEP 1: Get microphone stream (permission already granted)
-      console.log("🎤 Step 1: Accessing microphone stream...");
+      logger.debug(TAG, "Accessing microphone stream");
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
@@ -639,11 +544,11 @@ export function VoiceControls() {
           noiseSuppression: true,
         },
       });
-      console.log("✅ Microphone stream accessed");
+      logger.debug(TAG, "Microphone stream accessed");
       microphoneStreamRef.current = stream;
 
       // STEP 2: Set up AudioContext
-      console.log("🎤 Step 2: Setting up AudioContext...");
+      logger.debug(TAG, "Setting up AudioContext");
       try {
         audioContextRef.current = new AudioContext({
           sampleRate: 16000,
@@ -654,11 +559,11 @@ export function VoiceControls() {
         audioContextRef.current.onstatechange = () => {
           const ctx = audioContextRef.current;
           if (!ctx) return;
-          console.log(`🔊 AudioContext state changed: ${ctx.state}`);
+          logger.debug(TAG, `AudioContext state changed: ${ctx.state}`);
           if (ctx.state === "suspended" || ctx.state === "interrupted") {
-            console.log("⚠️ AudioContext suspended/interrupted during recording, attempting resume...");
+            logger.warn(TAG, "AudioContext suspended/interrupted, attempting resume");
             ctx.resume().catch((err) => {
-              console.error("❌ Failed to resume AudioContext:", err);
+              logger.error(TAG, "Failed to resume AudioContext:", err);
             });
           }
         };
@@ -671,11 +576,9 @@ export function VoiceControls() {
         await audioContextRef.current.audioWorklet.addModule(
           `${import.meta.env.BASE_URL}audio-processor.js`
         );
-        console.log("✅ Audio worklet loaded");
-
-        console.log("🔧 Microphone preparation phase started");
+        logger.debug(TAG, "Audio worklet loaded");
       } catch (audioError) {
-        console.error("❌ AudioContext setup failed:", audioError);
+        logger.error(TAG, "AudioContext setup failed:", audioError);
         toast.error(
           "Failed to initialize audio system. Please check your browser settings."
         );
@@ -687,37 +590,32 @@ export function VoiceControls() {
       // Just update the STT request timing
 
       // STEP 3: Create STT connection
-      console.log("📡 Step 3: Creating STT stream...");
+      logger.debug(TAG, "Creating STT stream");
 
       const connection = await createStreamConnection();
 
       // Check if we've already set up handlers for this connection
       if (connectionHandlersRef.current.has(connection)) {
-        console.log("🔄 Reusing existing connection handlers");
+        logger.debug(TAG, "Reusing existing connection handlers");
         // For already connected connections, we need to manually trigger the audio setup
         // since the "connect" event won't fire again
         if (connection.connected) {
-          console.log(
-            "🔌 Connection already connected, setting up audio pipeline..."
-          );
+          logger.debug(TAG, "Connection already connected, setting up audio pipeline");
           setTimeout(async () => {
             try {
               await setupAudioPipeline(connection);
             } catch (error) {
-              console.error(
-                "❌ Error setting up audio pipeline for existing connection:",
-                error
-              );
+              logger.error(TAG, "Error setting up audio pipeline for existing connection:", error);
             }
           }, 0);
         }
       } else {
-        console.log("🔧 Setting up new connection handlers");
+        logger.debug(TAG, "Setting up new connection handlers");
         connectionHandlersRef.current.add(connection);
 
         // Set up event handlers for new connections
         connection.on("connect", async () => {
-          console.log("✅ Stream connected - Setting up audio pipeline...");
+          logger.info(TAG, "Stream connected");
           toast.success("Connected - Recording started");
 
           try {
@@ -728,7 +626,7 @@ export function VoiceControls() {
               keywordsObj[keyword] = keyword;
             });
             if (Object.keys(keywordsObj).length > 0) {
-              console.log("🔑 Applying keywords:", keywordsObj);
+              logger.debug(TAG, "Applying keywords:", keywordsObj);
               connection.setKeywords(keywordsObj);
             }
             lastAppliedKeywordsRef.current = JSON.stringify(keywords);
@@ -736,15 +634,12 @@ export function VoiceControls() {
             // Apply schema values (only if not empty - don't send empty event)
             const schemaValues = currentSettings.stt.schemaValues || {};
             if (Object.keys(schemaValues).length > 0) {
-              console.log("📋 Applying schema values:", schemaValues);
+              logger.debug(TAG, "Applying schema values:", schemaValues);
               connection.setSchemaValues(schemaValues, (response) => {
                 if (response.status === "ok") {
-                  console.log("✅ Schema values set successfully");
+                  logger.debug(TAG, "Schema values set successfully");
                 } else {
-                  console.warn(
-                    "⚠️ Schema values set with warning:",
-                    response.message
-                  );
+                  logger.warn(TAG, "Schema values set with warning:", response.message);
                 }
               });
             }
@@ -752,7 +647,7 @@ export function VoiceControls() {
 
             await setupAudioPipeline(connection);
           } catch (error) {
-            console.error("❌ Error in connect handler:", error);
+            logger.error(TAG, "Error in connect handler:", error);
             stopRecording();
           }
         });
@@ -866,19 +761,14 @@ export function VoiceControls() {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         connection.on("error", (error: any) => {
-          console.error("❌ Connection Error:", error);
-          toast.error(`Error: ${error?.message || "Connection failed"}`);
+          logger.error(TAG, "Connection error:", error);
+          toast.error(`Connection error: ${formatError(error)}`);
 
           // Update STT request message to error status
-          console.log(
-            "❌ Setting error status for message:",
-            currentRecordingMessageIdRef.current
-          );
           if (currentRecordingMessageIdRef.current) {
             setConversation((prev) => {
               const updatedMessages = prev.messages.map((msg) => {
                 if (msg.id === currentRecordingMessageIdRef.current) {
-                  console.log("✅ Setting error status for message:", msg.id);
                   return {
                     ...msg,
                     status: "error" as const,
@@ -887,16 +777,12 @@ export function VoiceControls() {
                     isRecording: false,
                   };
                 } else {
-                  if (msg.isRecording) {
-                    console.log("❌ Clearing isRecording for message:", msg.id);
-                  }
                   return {
                     ...msg,
                     isRecording: false,
                   };
                 }
               });
-              logConversationState(updatedMessages, "Recording Error");
               return { ...prev, messages: updatedMessages };
             });
           }
@@ -916,7 +802,7 @@ export function VoiceControls() {
           // Reset applied refs when connection disconnects
           lastAppliedKeywordsRef.current = "";
           lastAppliedSchemaValuesRef.current = "";
-          console.log("🔌 Disconnected:", reason);
+          logger.info(TAG, "Disconnected:", reason);
           if (reason && reason !== "io client disconnect") {
             toast.error(`Disconnected: ${reason}`);
           }
@@ -930,30 +816,27 @@ export function VoiceControls() {
       }
 
       connectionRef.current = connection;
-      console.log("✅ STT stream created and handlers set up");
+      logger.debug(TAG, "STT stream created and handlers set up");
 
       // Handle connection state properly for pause/resume
       if (connection.connected) {
-        console.log("🔌 Reusing existing STT connection...");
+        logger.debug(TAG, "Reusing existing STT connection");
         // For already connected connections, we need to manually trigger the audio setup
         // since the "connect" event won't fire again
         setTimeout(async () => {
           try {
             await setupAudioPipeline(connection);
           } catch (error) {
-            console.error(
-              "❌ Error setting up audio pipeline for existing connection:",
-              error
-            );
+            logger.error(TAG, "Error setting up audio pipeline for existing connection:", error);
           }
         }, 0);
       } else {
         // Connection was closed (possibly by server timeout), create new one
-        console.log("🔌 Connection was closed, creating new STT stream...");
+        logger.debug(TAG, "Connection was closed, creating new STT stream");
         connection.connect();
       }
     } catch (error) {
-      console.error("❌ Error starting recording:", error);
+      logger.error(TAG, "Error starting recording:", error);
 
       let errorMessage = "Failed to start recording";
       if (error instanceof Error) {
@@ -969,7 +852,7 @@ export function VoiceControls() {
           errorMessage =
             "Microphone doesn't support the required audio format.";
         } else {
-          errorMessage = error.message;
+          errorMessage = formatError(error);
         }
       }
 
@@ -977,15 +860,10 @@ export function VoiceControls() {
       cleanupMicrophone();
 
       // Update STT request message to error status
-      console.log(
-        "❌ Setting error status for message (startRecording):",
-        currentRecordingMessageIdRef.current
-      );
       if (currentRecordingMessageIdRef.current) {
         setConversation((prev) => {
           const updatedMessages = prev.messages.map((msg) => {
             if (msg.id === currentRecordingMessageIdRef.current) {
-              console.log("✅ Setting error status for message:", msg.id);
               return {
                 ...msg,
                 status: "error" as const,
@@ -994,16 +872,12 @@ export function VoiceControls() {
                 isRecording: false,
               };
             } else {
-              if (msg.isRecording) {
-                console.log("❌ Clearing isRecording for message:", msg.id);
-              }
               return {
                 ...msg,
                 isRecording: false,
               };
             }
           });
-          logConversationState(updatedMessages, "Recording Error (Start)");
           return { ...prev, messages: updatedMessages };
         });
       }
@@ -1021,10 +895,7 @@ export function VoiceControls() {
   };
 
   const stopRecording = () => {
-    console.log(
-      "🔴 Stopping recording for message:",
-      currentRecordingMessageIdRef.current
-    );
+    logger.info(TAG, "Stopping recording for message:", currentRecordingMessageIdRef.current);
 
     // Update STT request message to done status
     if (currentRecordingMessageIdRef.current) {
@@ -1033,17 +904,9 @@ export function VoiceControls() {
           ? Date.now() - sttRequestStartTimeRef.current
           : 0;
 
-      console.log(
-        "📝 Setting message to done status:",
-        currentRecordingMessageIdRef.current,
-        "duration:",
-        finalDuration
-      );
-
       setConversation((prev) => {
         const updatedMessages = prev.messages.map((msg) => {
           if (msg.id === currentRecordingMessageIdRef.current) {
-            console.log("✅ Setting done status for message:", msg.id);
             return {
               ...msg,
               status: "done" as const,
@@ -1051,16 +914,12 @@ export function VoiceControls() {
               isRecording: false,
             };
           } else {
-            if (msg.isRecording) {
-              console.log("❌ Clearing isRecording for message:", msg.id);
-            }
             return {
               ...msg,
               isRecording: false,
             };
           }
         });
-        logConversationState(updatedMessages, "Recording Completed");
         return { ...prev, messages: updatedMessages };
       });
     }
@@ -1078,7 +937,7 @@ export function VoiceControls() {
           try {
             connectionRef.current.send(new ArrayBuffer(0));
           } catch (error) {
-            console.log("Keepalive ping failed:", error);
+            logger.debug(TAG, "Keepalive ping failed:", error);
             // Stop keepalive if connection is dead
             if (keepaliveTimerRef.current) {
               clearInterval(keepaliveTimerRef.current);
@@ -1093,10 +952,7 @@ export function VoiceControls() {
     cleanupMicrophone();
 
     // Clear the current recording message ID
-    const previousMessageId = currentRecordingMessageIdRef.current;
     currentRecordingMessageIdRef.current = null;
-
-    console.log("🧹 Clearing current recording message ID:", previousMessageId);
 
     setAudio((prev) => ({
       ...prev,
@@ -1107,30 +963,21 @@ export function VoiceControls() {
       sttRequestElapsedMs: 0,
     }));
 
-    console.log("🔴 Recording stopped, microphone in ready state", {
-      isRecording: false,
-      microphoneState: "ready", // This will be synced by the effect
-      currentSessionId: audio.currentSessionId,
-      previousMessageId,
-      micAllowed: true,
-    });
+    logger.info(TAG, "Recording stopped");
 
     // Keep session active for next recording
     sttRequestStartTimeRef.current = 0;
   };
 
   const handleMicPress = async () => {
-    console.log("🎤 Microphone button clicked", {
+    logger.debug(TAG, "Mic button clicked", {
       computedState: computedMicrophoneState,
-      audioState: audio.microphoneState,
-      isConnected,
-      sessionId: audio.currentSessionId,
       isRecording: audio.isRecording,
     });
 
     // If buffer streaming or paused (file/URL active), toggle pause/resume
     if (audio.currentAudioSource === "url") {
-      console.log("Pause/resume buffer stream requested via mic button");
+      logger.debug(TAG, "Pause/resume buffer stream requested");
       setAudio((prev) => ({
         ...prev,
         bufferStreamPauseRequested: Date.now(),
@@ -1140,27 +987,27 @@ export function VoiceControls() {
 
     // If currently recording (connected state), stop recording and go to ready state
     if (computedMicrophoneState === "connected") {
-      console.log("🔴 Currently connected/recording, stopping...");
+      logger.debug(TAG, "Currently recording, stopping");
       stopRecording();
       return;
     }
 
     // If ready state (session exists but not connected), start recording
     if (computedMicrophoneState === "ready") {
-      console.log("🎤 In ready state, starting recording...");
+      logger.debug(TAG, "In ready state, starting recording");
       await startRecording();
       return;
     }
 
     // If no session exists, create session and go to ready state
     if (!sessionId) {
-      console.log("🎤 No session exists, creating session...");
+      logger.debug(TAG, "No session exists, creating session");
       // First show the connecting animation for testing
       setTestConnecting(true);
       try {
         await createSessionAndStartRecording();
       } catch (error) {
-        console.error("❌ Error creating session:", error);
+        logger.error(TAG, "Error creating session:", error);
         setTestConnecting(false); // Hide animation on error
       }
       return;
@@ -1169,19 +1016,16 @@ export function VoiceControls() {
 
   const createSessionAndStartRecording = async () => {
     try {
-      console.log("🔧 Creating new session for microphone recording...");
+      logger.info(TAG, "Creating new session for microphone recording");
       await createSession();
 
-      // The state sync effect will handle updating the microphone state to "ready"
-      console.log("✅ Session created successfully:", sessionId);
+      logger.debug(TAG, "Session created:", sessionId);
 
       // Now start recording with the new session
       await startRecording();
     } catch (error) {
-      console.error("❌ Failed to create session:", error);
-      toast.error(
-        "Failed to create session. Please check your API key in the settings and try again →"
-      );
+      logger.error(TAG, "Failed to create session:", error);
+      toast.error(`Failed to create session: ${formatError(error)}`);
       // Reset connecting animation on error
       setTestConnecting(false);
     }
@@ -1285,10 +1129,6 @@ export function VoiceControls() {
 
   // Helper function to get button className based on state
   const getButtonClassName = () => {
-    console.log(
-      "🔍 getButtonClassName-> Getting button class name for state:",
-      displayMicrophoneState
-    );
     const baseClass = "voice-controls__mic-button";
     const stateClass = (() => {
       switch (displayMicrophoneState) {

@@ -8,6 +8,9 @@ import {
 } from "@/state/settings";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
+import { logger, formatError } from "@/lib/logger";
+
+const TAG = "Connection";
 
 /**
  * Module-level cache for SDK client and session
@@ -41,7 +44,7 @@ let lastNotifiedError: string | undefined = undefined;
  */
 function getCurrentSettings(settings: SettingsState) {
   const env = settings.environment;
-  console.log("getCurrentSettings", { env, settings });
+  logger.debug(TAG, "getCurrentSettings", { env });
   return {
     apiKey: settings[env].connection.apiKey,
     baseUrl: settings[env].connection.baseUrl,
@@ -152,10 +155,7 @@ export function useConnection() {
 
       if (needsNewClient) {
         // Close existing session if any
-        console.log(
-          "useConnection closing existing session: ",
-          connectionCache
-        );
+        logger.debug(TAG, "Closing existing session");
         if (connectionCache) {
           try {
             await AiolaClient.closeSession(connectionCache.accessToken, {
@@ -177,11 +177,7 @@ export function useConnection() {
 
         try {
           // Create new access token
-          console.log("useConnection creating new access token", {
-            apiKey,
-            authBaseUrl,
-            workflowId: workflowId || undefined,
-          });
+          logger.debug(TAG, "Creating new access token");
           const { accessToken } = await AiolaClient.grantToken({
             apiKey,
             authBaseUrl,
@@ -232,7 +228,7 @@ export function useConnection() {
           setConnection((prev) => ({
             ...prev,
             isConnecting: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: formatError(error),
           }));
 
           throw error;
@@ -261,28 +257,11 @@ export function useConnection() {
         connectionCache.environment !== environment;
 
       if (needsNewClient) {
-        console.log(
-          "useConnection: Connection settings changed, recreating client",
-          {
-            oldApiKey: connectionCache.apiKey,
-            newApiKey: apiKey,
-            oldBaseUrl: connectionCache.baseUrl,
-            newBaseUrl: baseUrl,
-            oldAuthBaseUrl: connectionCache.authBaseUrl,
-            newAuthBaseUrl: authBaseUrl,
-            oldWorkflowId: connectionCache.workflowId,
-            newWorkflowId: workflowId,
-            oldEnvironment: connectionCache.environment,
-            newEnvironment: environment,
-          }
-        );
+        logger.debug(TAG, "Connection settings changed, recreating client");
 
         // Force recreation of client with new settings
         getClient(true).catch((error) => {
-          console.error(
-            "Failed to recreate client after settings change:",
-            error
-          );
+          logger.error(TAG, "Failed to recreate client after settings change:", error);
           // Error handling is already done in getClient()
         });
       }

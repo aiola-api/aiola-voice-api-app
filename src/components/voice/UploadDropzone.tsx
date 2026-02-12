@@ -19,8 +19,11 @@ import { useBufferStreamPipeline } from "@/hooks/useBufferStreamPipeline";
 import { useAudioSourceLoader } from "@/hooks/useAudioSourceLoader";
 import { toast } from "sonner";
 import { componentClassName } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { StreamSourcePanel } from "./StreamSourcePanel";
 import "./UploadDropzone.css";
+
+const TAG = "UploadDropzone";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -134,7 +137,7 @@ export function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
 
         onUploadComplete?.(transcript);
       } catch (error) {
-        console.error("Upload Error:", error);
+        logger.error(TAG, "Upload error:", error);
         toast.error("File upload failed");
         setConversation((prev) => ({
           ...prev,

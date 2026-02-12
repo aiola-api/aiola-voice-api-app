@@ -1,4 +1,7 @@
 import { useState, useCallback } from "react";
+import { logger } from "@/lib/logger";
+
+const TAG = "AudioSourceLoader";
 
 export interface AudioSourceError {
   type: "validation" | "fetch" | "cors" | "network" | "file";
@@ -72,7 +75,7 @@ export function useAudioSourceLoader() {
       if (contentLength) {
         const sizeInMB = parseInt(contentLength) / (1024 * 1024);
         if (sizeInMB > LARGE_URL_SIZE / (1024 * 1024)) {
-          console.warn(`Large file detected (${sizeInMB.toFixed(1)}MB). Streaming may take time.`);
+          logger.warn(TAG, `Large file detected (${sizeInMB.toFixed(1)}MB). Streaming may take time.`);
         }
       }
 

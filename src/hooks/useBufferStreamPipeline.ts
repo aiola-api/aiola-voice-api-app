@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import type { StreamConnection } from "@/state/connection";
 import type { SchemaValues } from "@/state/settings";
 import type { SourceMetadata } from "./useAudioSourceLoader";
+import { logger, formatError } from "@/lib/logger";
+
+const TAG = "BufferPipeline";
 
 /**
  * Unified streaming pipeline: ArrayBuffer -> WebSocket
@@ -67,14 +70,14 @@ export function useBufferStreamPipeline() {
 
     // Monitor AudioContext state changes — auto-resume only if not intentionally paused
     ctx.onstatechange = () => {
-      console.log(`🔊 [BufferPipeline] AudioContext state changed: ${ctx.state}`);
+      logger.debug(TAG, `AudioContext state changed: ${ctx.state}`);
       if (
         (ctx.state === "suspended" || ctx.state === "interrupted") &&
         !intentionalPauseRef.current
       ) {
-        console.log("⚠️ [BufferPipeline] AudioContext suspended/interrupted, attempting resume...");
+        logger.warn(TAG, "AudioContext suspended/interrupted, attempting resume");
         ctx.resume().catch((err) => {
-          console.error("❌ [BufferPipeline] Failed to resume AudioContext:", err);
+          logger.error(TAG, "Failed to resume AudioContext:", err);
         });
       }
     };
@@ -170,11 +173,11 @@ export function useBufferStreamPipeline() {
         currentSessionIdRef.current = streamSessionId;
         streamStartTimeRef.current = Date.now();
 
-        console.log("[BufferPipeline] Adding initial stream message:", messageId);
+        logger.debug(TAG, "Adding initial stream message:", messageId);
 
         // Add message to conversation
         setConversation((prev) => {
-          console.log("[BufferPipeline] setConversation called, prev messages:", prev.messages.length);
+          logger.debug(TAG, "setConversation called, prev messages:", prev.messages.length);
           return {
             ...prev,
             messages: [...prev.messages, streamMessage],
@@ -196,9 +199,9 @@ export function useBufferStreamPipeline() {
         const { audioContext, audioWorkletNode } = await initializeAudioContext();
 
         // Create/reuse stream connection
-        console.log("[BufferPipeline] Creating stream connection...");
+        logger.debug(TAG, "Creating stream connection...");
         const connection = await createStreamConnection();
-        console.log("[BufferPipeline] Got connection:", !!connection, "connected:", connection.connected);
+        logger.debug(TAG, "Got connection:", !!connection, "connected:", connection.connected);
         connectionRef.current = connection;
         // Track this specific connection instance
         activeConnectionRef.current = connection;
@@ -219,10 +222,10 @@ export function useBufferStreamPipeline() {
 
         // Extracted pipeline setup - called from "connect" handler or directly if already connected
         const setupBufferPipeline = async () => {
-          console.log("[BufferPipeline] setupBufferPipeline called");
-          console.log("[BufferPipeline] activeRef === this?", activeConnectionRef.current === thisConnection);
-          console.log("[BufferPipeline] messageIdRef:", currentMessageIdRef.current);
-          console.log("[BufferPipeline] sessionIdRef:", currentSessionIdRef.current);
+          logger.debug(TAG, "setupBufferPipeline called");
+          logger.debug(TAG, "activeRef === this?", activeConnectionRef.current === thisConnection);
+          logger.debug(TAG, "messageIdRef:", currentMessageIdRef.current);
+          logger.debug(TAG, "sessionIdRef:", currentSessionIdRef.current);
           // Guard: only process if this is still the active connection
           if (activeConnectionRef.current !== thisConnection) return;
           if (!currentMessageIdRef.current || !currentSessionIdRef.current) return;
@@ -264,11 +267,11 @@ export function useBufferStreamPipeline() {
 
             // Handle completion
             sourceNode.onended = () => {
-              console.log("[BufferPipeline] sourceNode.onended fired - audio finished playing");
+              logger.debug(TAG, "sourceNode.onended fired - audio finished playing");
               sourceNode.disconnect();
               // Wait up to 5s for final transcript
               completionTimeoutRef.current = setTimeout(() => {
-                console.log("[BufferPipeline] 5s completion timeout fired, calling stopStreaming");
+                logger.debug(TAG, "5s completion timeout fired, calling stopStreaming");
                 stopStreamingRef.current?.();
               }, 5000);
             };
@@ -282,12 +285,12 @@ export function useBufferStreamPipeline() {
               microphoneState: "streaming",
             }));
           } catch (error) {
-            console.error("Failed to setup audio pipeline:", error);
+            logger.error(TAG, "Failed to setup audio pipeline:", error);
 
             const isCorsError = error instanceof TypeError && error.message.includes("fetch");
             const errorMessage = isCorsError
               ? "Cannot access URL due to CORS restrictions. The server must allow cross-origin requests."
-              : `Failed to stream audio: ${error instanceof Error ? error.message : "Unknown error"}`;
+              : `Failed to stream audio: ${formatError(error)}`;
 
             toast.error(errorMessage);
             stopStreamingRef.current?.();
@@ -296,7 +299,7 @@ export function useBufferStreamPipeline() {
 
         // Define named handlers so we can remove them later (prevent duplicate stacking)
         const onConnect = () => {
-          console.log("[BufferPipeline] 'connect' event fired!");
+          logger.debug(TAG, "'connect' event fired!");
           setupBufferPipeline();
         };
 
@@ -412,16 +415,15 @@ export function useBufferStreamPipeline() {
         };
 
         const onError = (err: unknown) => {
-          console.log("[BufferPipeline] 'error' event fired!", err);
+          logger.debug(TAG, "'error' event fired!", err);
           if (activeConnectionRef.current !== thisConnection) return;
-          const errorObj = err as { message?: string };
-          console.error("Stream error:", err);
-          toast.error(`Stream error: ${errorObj.message || "Unknown error"}`);
+          logger.error(TAG, "Stream error:", err);
+          toast.error(`Stream error: ${formatError(err)}`);
           stopStreamingRef.current?.();
         };
 
         const onClose = () => {
-          console.log("[BufferPipeline] 'close' event fired!");
+          logger.debug(TAG, "'close' event fired!");
           if (activeConnectionRef.current !== thisConnection) return;
           stopStreamingRef.current?.();
         };
@@ -437,16 +439,16 @@ export function useBufferStreamPipeline() {
 
         // Reuse open socket or connect fresh
         if (connection.connected) {
-          console.log("[BufferPipeline] Connection already open, setting up pipeline directly...");
+          logger.debug(TAG, "Connection already open, setting up pipeline directly...");
           // "connect" event won't fire again, so run setup directly
           setupBufferPipeline();
         } else {
-          console.log("[BufferPipeline] Calling connection.connect()...");
+          logger.debug(TAG, "Calling connection.connect()...");
           connection.connect();
         }
       } catch (error) {
-        console.error("Failed to start buffer streaming:", error);
-        toast.error("Failed to start streaming");
+        logger.error(TAG, "Failed to start buffer streaming:", error);
+        toast.error(`Failed to start streaming: ${formatError(error)}`);
 
         const microphoneState = isOnline && sessionId ? "ready" : "idle";
         setAudio((prev) => ({
@@ -476,12 +478,11 @@ export function useBufferStreamPipeline() {
    * FIX: Closes AudioContext between streams
    */
   const stopBufferStream = useCallback(() => {
-    console.log("[BufferPipeline] stopBufferStream called", {
+    logger.debug(TAG, "stopBufferStream called", {
       messageId: currentMessageIdRef.current,
       sessionId: currentSessionIdRef.current,
       hasActiveConnection: !!activeConnectionRef.current,
     });
-    console.trace("[BufferPipeline] stopBufferStream stack trace");
 
     // Clear completion timeout
     if (completionTimeoutRef.current) {

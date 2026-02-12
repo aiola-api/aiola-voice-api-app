@@ -287,3 +287,39 @@
   height: 1.25rem;
   width: 1.25rem;
 }
+
+/* Log-level toggle */
+.chat-header__log-level-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-header__log-level-button {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: #ffffff;
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0;
+  font-family: monospace;
+  font-size: 0.6rem;
+  transition: opacity 0.2s ease;
+}
+
+.chat-header__log-level-button:hover {
+  opacity: 1;
+}
+
+.chat-header__log-level-button svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.chat-header__log-level-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

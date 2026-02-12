@@ -1,5 +1,8 @@
 import { atom, useRecoilState, selector } from "recoil";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
+
+const TAG = "Settings";
 
 export const APP_VERSION = "0.3.0";
 
@@ -213,9 +216,7 @@ function loadSettingsFromStorage(): SettingsState {
 
       // Check if this is the old format (has flat structure)
       if (parsed.connection && typeof parsed.connection.apiKey === "string") {
-        console.log(
-          "[loadSettingsFromStorage] Migrating from old settings format"
-        );
+        logger.info(TAG, "Migrating from old settings format");
 
         // Migrate from old format to new format
         const migratedSettings: SettingsState = {
@@ -288,7 +289,7 @@ function loadSettingsFromStorage(): SettingsState {
           JSON.stringify(migratedSettings)
         );
 
-        console.log("[loadSettingsFromStorage] Settings migrated and loaded");
+        logger.info(TAG, "Settings migrated and loaded");
         return migratedSettings;
       }
 
@@ -302,9 +303,7 @@ function loadSettingsFromStorage(): SettingsState {
           apiKey.includes("authorization Bearer") ||
           apiKey.includes('{"connection":')
         ) {
-          console.warn(
-            "Corrupted apiKey detected in localStorage, clearing it"
-          );
+          logger.warn(TAG, "Corrupted apiKey detected, clearing it");
           parsed.prod.connection.apiKey = "";
           // Save the fixed data back to localStorage
           localStorage.setItem(
@@ -336,9 +335,7 @@ function loadSettingsFromStorage(): SettingsState {
           apiKey.includes("authorization Bearer") ||
           apiKey.includes('{"connection":')
         ) {
-          console.warn(
-            "Corrupted dev apiKey detected in localStorage, clearing it"
-          );
+          logger.warn(TAG, "Corrupted dev apiKey detected, clearing it");
           parsed.dev.connection.apiKey = "";
           // Save the fixed data back to localStorage
           localStorage.setItem(
@@ -408,32 +405,21 @@ function loadSettingsFromStorage(): SettingsState {
         },
       };
 
-      console.log(
-        "[loadSettingsFromStorage] Settings loaded from localStorage:",
-        {
-          environment: loadedSettings.environment,
-          hasProdApiKey: !!loadedSettings.prod.connection.apiKey,
-          hasDevApiKey: !!loadedSettings.dev.connection.apiKey,
-          prodSttLanguage: loadedSettings.prod.stt.language,
-          prodTtsVoice: loadedSettings.prod.tts.voice,
-          devSttLanguage: loadedSettings.dev.stt.language,
-          devTtsVoice: loadedSettings.dev.tts.voice,
-          source: "localStorage",
-        }
-      );
+      logger.debug(TAG, "Settings loaded", {
+        environment: loadedSettings.environment,
+        hasProdApiKey: !!loadedSettings.prod.connection.apiKey,
+        hasDevApiKey: !!loadedSettings.dev.connection.apiKey,
+        source: "localStorage",
+      });
 
       return loadedSettings;
     }
   } catch (error) {
-    console.warn("Failed to load settings from localStorage:", error);
-    console.log(
-      "[loadSettingsFromStorage] Using default settings due to error"
-    );
+    logger.warn(TAG, "Failed to load settings:", error);
+    logger.debug(TAG, "Using default settings due to error");
   }
 
-  console.log(
-    "[loadSettingsFromStorage] No saved settings found, using defaults"
-  );
+  logger.debug(TAG, "No saved settings found, using defaults");
   return defaultSettings;
 }
 
@@ -478,12 +464,9 @@ export function SettingsInitializer() {
         stt: loadedSettings[loadedSettings.environment].stt,
         tts: loadedSettings[loadedSettings.environment].tts,
       };
-      console.log("[SettingsInitializer] Settings loaded from localStorage:", {
+      logger.debug(TAG, "SettingsInitializer loaded", {
         environment: loadedSettings.environment,
         hasApiKey: !!currentSettings.apiKey,
-        sttLanguage: currentSettings.stt.language,
-        ttsVoice: currentSettings.tts.voice,
-        rememberFlowid: currentSettings.stt.rememberFlowid,
       });
       setSettings(loadedSettings);
     }, 100);

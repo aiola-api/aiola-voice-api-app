@@ -3,6 +3,9 @@ import { type StreamConnection } from "@/state/connection";
 import { settingsState, type VadConfig, type SchemaValues, type SettingsState } from "@/state/settings";
 import { useConnection } from "@/hooks/useConnection";
 import { useCallback } from "react";
+import { logger } from "@/lib/logger";
+
+const TAG = "STT";
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -129,7 +132,7 @@ export function useSTT() {
           (streamCache.settings as { executionId?: string }).executionId !==
             currentSettingsObj.executionId;
 
-        console.log("useSTT streamCache", streamCache);
+        logger.debug(TAG, "streamCache", streamCache);
 
         if (!settingsChanged && streamCache) {
           // Update state metadata (don't store stream object - it's mutable)
