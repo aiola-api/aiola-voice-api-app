@@ -27,6 +27,26 @@ const ACCEPTED_FILE_TYPES = [".mp3", ".wav", ".mp4", ".m4a", ".ogg", ".flac", ".
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 const LARGE_URL_SIZE = 100 * 1024 * 1024; // 100MB warning threshold
 
+/** Check if the URL pathname (ignoring query params) has a known audio extension */
+function hasAudioExtension(url: string): boolean {
+  try {
+    const { pathname } = new URL(url);
+    return AUDIO_EXTENSIONS.test(pathname);
+  } catch {
+    return AUDIO_EXTENSIONS.test(url);
+  }
+}
+
+/** Check if the URL is an AWS presigned URL (S3, CloudFront, etc.) */
+function isPresignedUrl(url: string): boolean {
+  try {
+    const params = new URL(url).searchParams;
+    return params.has("X-Amz-Algorithm") || params.has("X-Amz-Signature");
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Pure data-loading hook for URL and file audio sources.
  * No AudioContext/WebSocket concerns - just fetches/reads data.
@@ -45,10 +65,10 @@ export function useAudioSourceLoader() {
       return false;
     }
 
-    if (!AUDIO_EXTENSIONS.test(url)) {
+    if (!hasAudioExtension(url) && !isPresignedUrl(url)) {
       setError({
         type: "validation",
-        message: "URL must point to an audio file (.mp3, .wav, .mp4, .m4a, .ogg, .flac, .webm)",
+        message: "URL must point to an audio file (.mp3, .wav, .mp4, .m4a, .ogg, .flac, .webm) or be a presigned URL",
       });
       return false;
     }
@@ -81,12 +101,23 @@ export function useAudioSourceLoader() {
 
       const arrayBuffer = await response.arrayBuffer();
 
+      // For presigned URLs, derive a friendlier label from the pathname
+      let label = url;
+      if (isPresignedUrl(url)) {
+        try {
+          const pathname = new URL(url).pathname;
+          label = decodeURIComponent(pathname.split("/").pop() || pathname) || "Presigned URL";
+        } catch {
+          label = "Presigned URL";
+        }
+      }
+
       setStatus("ready");
       return {
         arrayBuffer,
         metadata: {
           source: "url",
-          label: url,
+          label,
           sourceUrl: url,
         },
       };

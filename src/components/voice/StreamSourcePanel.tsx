@@ -279,7 +279,7 @@ export function StreamSourcePanel({
             {getUrlStatusIcon()}
             <Input
               type="url"
-              placeholder="https://example.com/audio.mp3"
+              placeholder="https://example.com/audio.mp3 or presigned URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -387,7 +387,7 @@ export function StreamSourcePanel({
       {/* Format Hints */}
       {!error && !isStreaming && (
         <div className="stream-source-hint">
-          Supported formats: MP3, WAV, MP4, M4A, OGG, FLAC, WebM
+          Supported formats: MP3, WAV, MP4, M4A, OGG, FLAC, WebM &middot; AWS presigned URLs supported
         </div>
       )}
     </div>
