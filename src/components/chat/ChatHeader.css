@@ -288,38 +288,42 @@
   width: 1.25rem;
 }
 
-/* Log-level toggle */
+/* Log-level dropdown */
 .chat-header__log-level-toggle {
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.chat-header__log-level-button {
-  display: flex;
-  align-items: center;
   gap: 0.25rem;
-  background: none;
-  border: none;
-  color: #ffffff;
   opacity: 0.5;
-  cursor: pointer;
-  padding: 0;
-  font-family: monospace;
-  font-size: 0.6rem;
   transition: opacity 0.2s ease;
 }
 
-.chat-header__log-level-button:hover {
+.chat-header__log-level-toggle:hover {
   opacity: 1;
 }
 
-.chat-header__log-level-button svg {
+.chat-header__log-level-icon {
   height: 1rem;
   width: 1rem;
+  color: #ffffff;
 }
 
-.chat-header__log-level-label {
+.chat-header__log-level-select {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.chat-header__log-level-select option {
+  background: #000000;
+  color: #ffffff;
 }

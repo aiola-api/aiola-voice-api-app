@@ -90,7 +90,9 @@ export function useBufferStreamPipeline() {
       `${import.meta.env.BASE_URL}audio-processor.js`
     );
 
-    const workletNode = new AudioWorkletNode(ctx, "audio-processor");
+    const workletNode = new AudioWorkletNode(ctx, "audio-processor", {
+      processorOptions: { logLevel: logger.getLevel() },
+    });
 
     audioContextRef.current = ctx;
     audioWorkletNodeRef.current = workletNode;
