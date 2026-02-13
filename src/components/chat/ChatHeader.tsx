@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   IconAdjustmentsAlt,
@@ -23,7 +23,7 @@ import "./ChatHeader.css";
 
 const TAG = "ChatHeader";
 
-const LOG_LEVEL_CYCLE: LogLevel[] = ["error", "warn", "info", "debug"];
+const LOG_LEVELS: LogLevel[] = ["error", "warn", "info", "debug"];
 
 // Helper function to get current environment settings
 function getCurrentSettings(settings: SettingsState) {
@@ -52,14 +52,6 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
   const conversation = useRecoilValue(conversationState);
   const audio = useRecoilValue(audioState);
   const [logLevel, setLogLevel] = useState<LogLevel>(logger.getLevel());
-
-  const cycleLogLevel = useCallback(() => {
-    const currentIndex = LOG_LEVEL_CYCLE.indexOf(logLevel);
-    const nextLevel = LOG_LEVEL_CYCLE[(currentIndex + 1) % LOG_LEVEL_CYCLE.length];
-    logger.setLevel(nextLevel);
-    setLogLevel(nextLevel);
-    toast.success(`Log level: ${nextLevel}`);
-  }, [logLevel]);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -218,19 +210,25 @@ export function ChatHeader({ onSettingsClick }: ChatHeaderProps) {
           </Button>
         </div>
         <div className="chat-header__top-actions">
-          <Tooltip
-            className="chat-header__log-level-toggle"
-            content={`Log level: ${logLevel}`}
-          >
-            <button
-              onClick={cycleLogLevel}
-              className="chat-header__log-level-button"
-              aria-label={`Log level: ${logLevel}. Click to cycle.`}
+          <div className="chat-header__log-level-toggle">
+            <IconTerminal2 className="chat-header__log-level-icon" />
+            <select
+              className="chat-header__log-level-select"
+              value={logLevel}
+              onChange={(e) => {
+                const next = e.target.value as LogLevel;
+                logger.setLevel(next);
+                setLogLevel(next);
+              }}
+              aria-label="Log level"
             >
-              <IconTerminal2 />
-              <span className="chat-header__log-level-label">{logLevel}</span>
-            </button>
-          </Tooltip>
+              {LOG_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
           <Tooltip
             className="chat-header__version-icon"
             content={`version: ${VERSION}

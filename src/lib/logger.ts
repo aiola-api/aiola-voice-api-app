@@ -8,7 +8,7 @@ const LEVELS: Record<LogLevel, number> = {
 };
 
 const COOKIE_NAME = "user-config-prefs";
-const DEFAULT_LEVEL: LogLevel = "warn";
+const DEFAULT_LEVEL: LogLevel = "info";
 
 function readLevelFromCookie(): LogLevel {
   try {
@@ -52,7 +52,7 @@ function readCookieJson(): Record<string, unknown> {
   return {};
 }
 
-let currentLevel: LogLevel = readLevelFromCookie();
+let currentLevel: LogLevel = DEFAULT_LEVEL;
 
 function shouldLog(level: LogLevel): boolean {
   return LEVELS[level] <= LEVELS[currentLevel];
@@ -97,6 +97,7 @@ const logger = {
 
   setLevel(level: LogLevel): void {
     currentLevel = level;
+    console.log(`[Logger] log level set to: ${level}`);
     writeLevelToCookie(level);
   },
 };

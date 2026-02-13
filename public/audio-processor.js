@@ -1,7 +1,15 @@
+const LOG_LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
+
 class AudioProcessor extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super();
     this.frameCount = 0;
+    this.logLevel = (options.processorOptions && options.processorOptions.logLevel) || "info";
+    console.log(`[AudioProcessor] log level set to: ${this.logLevel}`);
+  }
+
+  shouldLog(level) {
+    return LOG_LEVELS[level] <= LOG_LEVELS[this.logLevel];
   }
 
   process(inputs, outputs, parameters) {
@@ -20,9 +28,9 @@ class AudioProcessor extends AudioWorkletProcessor {
       // Calculate amplitude levels for waveform visualization
       const amplitudeData = this.calculateAmplitude(inputChannel);
 
-      // Log every 100th frame to verify audio is being captured
+      // Log every 100th frame at info level
       this.frameCount++;
-      if (this.frameCount % 100 === 0) {
+      if (this.frameCount % 100 === 0 && this.shouldLog("info")) {
         console.log(
           `🎙️ Audio frame ${this.frameCount}: ${
             pcmData.length

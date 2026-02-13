@@ -376,7 +376,8 @@ export function VoiceControls() {
       );
       audioWorkletNodeRef.current = new AudioWorkletNode(
         audioContextRef.current!,
-        "audio-processor"
+        "audio-processor",
+        { processorOptions: { logLevel: logger.getLevel() } }
       );
 
       // Set up audio data handler
