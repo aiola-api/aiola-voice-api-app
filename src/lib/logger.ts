@@ -7,50 +7,7 @@ const LEVELS: Record<LogLevel, number> = {
   debug: 3,
 };
 
-const COOKIE_NAME = "user-config-prefs";
 const DEFAULT_LEVEL: LogLevel = "info";
-
-function readLevelFromCookie(): LogLevel {
-  try {
-    const match = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${COOKIE_NAME}=`));
-    if (match) {
-      const json = JSON.parse(decodeURIComponent(match.split("=")[1]));
-      if (json.logLevel && json.logLevel in LEVELS) {
-        return json.logLevel as LogLevel;
-      }
-    }
-  } catch {
-    // Corrupted cookie - fall through to default
-  }
-  return DEFAULT_LEVEL;
-}
-
-function writeLevelToCookie(level: LogLevel): void {
-  try {
-    const existing = readCookieJson();
-    const json = { ...existing, logLevel: level };
-    const encoded = encodeURIComponent(JSON.stringify(json));
-    document.cookie = `${COOKIE_NAME}=${encoded}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
-  } catch {
-    // Cookie write failed - silently continue
-  }
-}
-
-function readCookieJson(): Record<string, unknown> {
-  try {
-    const match = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${COOKIE_NAME}=`));
-    if (match) {
-      return JSON.parse(decodeURIComponent(match.split("=")[1]));
-    }
-  } catch {
-    // Corrupted cookie
-  }
-  return {};
-}
 
 let currentLevel: LogLevel = DEFAULT_LEVEL;
 
@@ -98,7 +55,6 @@ const logger = {
   setLevel(level: LogLevel): void {
     currentLevel = level;
     console.log(`[Logger] log level set to: ${level}`);
-    writeLevelToCookie(level);
   },
 };
 
